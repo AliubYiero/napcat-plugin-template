@@ -13,12 +13,18 @@
 export interface PluginConfig {
     /** 全局开关：是否启用插件功能 */
     enabled: boolean;
-    /** 调试模式：启用后输出详细日志 */
-    debug: boolean;
     /** 触发命令前缀，默认为 #cmd */
     commandPrefix: string;
-    /** 同一命令请求冷却时间（秒），0 表示不限制 */
-    cooldownSeconds: number;
+    /**
+     * 是否允许 `@机器人 + 前缀指令` 触发，默认开启。
+     * 关闭后仅识别以 commandPrefix 开头的消息。
+     */
+    allowAtBotTrigger: boolean;
+    /**
+     * 超级管理员 QQ 号名单（四档角色中唯一需要人工配置的档位）。
+     * WebUI 中以英文逗号分隔输入，经 sanitizeConfig 清洗后始终是数组。
+     */
+    adminUsers: string[];
     /** 按群的单独配置 */
     groupConfigs: Record<string, GroupConfig>;
     // TODO: 在这里添加你的插件配置项

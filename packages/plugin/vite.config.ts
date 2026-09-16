@@ -101,6 +101,17 @@ function copyAssetsPlugin() {
 
 export default defineConfig( ( { mode } ) => {
     const env = loadEnv( mode, repoRoot, '' );
+
+    // 热部署插件只在 --mode deploy 下挂载:
+    //   pnpm run build  → 纯构建, 不连调试服务 (无需 WS_URL / TOKEN)
+    //   pnpm run deploy → 构建 + 复制到远程 + 热重载
+    const isDeploy = mode === 'deploy';
+    console.log(
+        isDeploy
+            ? '[vite] (o\'v\'o) 部署模式: 构建完成后自动复制到远程并热重载'
+            : '[vite] (*\'v\'*) 构建模式: 仅产出 dist/, 需要热部署请运行 pnpm run deploy'
+    );
+
     return {
         resolve: {
             conditions: [ 'node', 'default' ],
@@ -122,13 +133,19 @@ export default defineConfig( ( { mode } ) => {
             },
             outDir: 'dist',
         },
-        plugins: [ nodeResolve(), copyAssetsPlugin(), napcatHmrPlugin( {
-            webui: {
-                distDir: '../../packages/webui/dist',
-                targetDir: 'webui',
-            },
-            wsUrl: env.WS_URL,
-            token: env.TOKEN,
-        } ) ],
+        plugins: [
+            nodeResolve(),
+            copyAssetsPlugin(),
+            ...( isDeploy
+                ? [ napcatHmrPlugin( {
+                    webui: {
+                        distDir: '../../packages/webui/dist',
+                        targetDir: 'webui',
+                    },
+                    wsUrl: env.WS_URL,
+                    token: env.TOKEN,
+                } ) ]
+                : [] ),
+        ],
     };
 } );

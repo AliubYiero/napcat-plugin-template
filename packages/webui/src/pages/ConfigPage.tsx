@@ -4,6 +4,19 @@ import { showToast } from '../hooks/useToast'
 import type { PluginConfig } from '../types'
 import { IconTerminal } from '../components/icons'
 
+/**
+ * 逗号分隔文本 → QQ 号数组
+ *
+ * 与服务端 sanitizeConfig 的字符串列表规则保持一致 (去空项、去首尾空白),
+ * 避免保存后前端展示与后端存储形态不一致。
+ */
+function parseAdminUsers(input: string): string[] {
+    return input
+        .split(',')
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0)
+}
+
 export default function ConfigPage() {
     const [config, setConfig] = useState<PluginConfig | null>(null)
     const [saving, setSaving] = useState(false)
@@ -69,10 +82,10 @@ export default function ConfigPage() {
                         onChange={(v) => updateField('enabled', v)}
                     />
                     <ToggleRow
-                        label="调试模式"
-                        desc="启用后输出详细日志到控制台"
-                        checked={config.debug}
-                        onChange={(v) => updateField('debug', v)}
+                        label="@机器人 触发"
+                        desc="开启后 @机器人 + 前缀指令也可触发"
+                        checked={config.allowAtBotTrigger}
+                        onChange={(v) => updateField('allowAtBotTrigger', v)}
                     />
                     <InputRow
                         label="命令前缀"
@@ -81,11 +94,10 @@ export default function ConfigPage() {
                         onChange={(v) => updateField('commandPrefix', v)}
                     />
                     <InputRow
-                        label="冷却时间 (秒)"
-                        desc="同一命令请求冷却时间，0 表示不限制"
-                        value={String(config.cooldownSeconds)}
-                        type="number"
-                        onChange={(v) => updateField('cooldownSeconds', Number(v) || 0)}
+                        label="超级管理员 QQ"
+                        desc="多个 QQ 号用英文逗号分隔；超管不受会话类型限制"
+                        value={config.adminUsers.join(',')}
+                        onChange={(v) => updateField('adminUsers', parseAdminUsers(v))}
                     />
                     {/* TODO: 在这里添加你的配置项 */}
                 </div>

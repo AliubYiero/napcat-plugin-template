@@ -125,7 +125,11 @@ export const plugin_on_config_change: PluginModule['plugin_on_config_change'] = 
     ctx, ui, key, value, currentConfig
 ) => {
     try {
-        pluginState.updateConfig({ [key]: value });
+        // 【必须】WebUI 单个配置项变更同为外部输入, 经 replaceConfig 统一清洗
+        pluginState.replaceConfig({
+            ...pluginState.config,
+            [key]: value,
+        } as PluginConfig);
         ctx.logger.debug(`配置项 ${key} 已更新`);
     } catch (err) {
         ctx.logger.error(`更新配置项 ${key} 失败:`, err);

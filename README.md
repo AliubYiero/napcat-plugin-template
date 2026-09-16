@@ -9,16 +9,25 @@ napcat-plugin-template/
 ├── packages/
 │   ├── plugin/               # 插件后端（发布物）
 │   │   ├── package.json      # 插件元信息（name / napcat 字段等）
-│   │   ├── vite.config.ts    # Vite 构建配置（含资源复制插件）
+│   │   ├── vite.config.ts    # Vite 构建配置（含资源复制插件；--mode deploy 才热部署）
+│   │   ├── vitest.config.ts  # 单测配置（只测纯函数，跑 node 环境）
 │   │   ├── tsconfig.json
+│   │   ├── test/             # 单测（范式里的纯函数模块逐一覆盖）
 │   │   └── src/
 │   │       ├── index.ts              # 插件入口，导出生命周期函数
 │   │       ├── config.ts             # 配置定义和 WebUI Schema
 │   │       ├── types.ts              # 类型定义（从 shared 重导出）
 │   │       ├── core/
-│   │       │   └── state.ts          # 全局状态管理单例
+│   │       │   ├── state.ts          # 全局状态管理单例 + 配置清洗
+│   │       │   └── admin.ts          # 权限模块：四档角色推导与线性比较
+│   │       ├── utils/
+│   │       │   └── at-bot-prefix.ts  # @机器人 CQ 段剥离（纯函数）
 │   │       ├── handlers/
-│   │       │   └── message-handler.ts # 消息处理器（命令解析、CD 冷却、消息工具）
+│   │       │   ├── message-handler.ts      # 接收层：群启用 → 规范化 → 前缀 → 切词 → 分发
+│   │       │   ├── instruction-registry.ts # 指令注册表（两级命名空间）
+│   │       │   ├── instruction-dispatch.ts # 分发层：统一校验、失败反馈不对称
+│   │       │   ├── utils.ts                # 发送工具 + 消息段工厂
+│   │       │   └── commands/               # 执行层：按模块分的指令 handler
 │   │       └── services/
 │   │           └── api-service.ts    # WebUI API 路由（无认证模式）
 │   ├── webui/                # React SPA 前端（独立构建）
@@ -98,7 +107,11 @@ pnpm install
 
 ```bash
 # 完整构建（webui 前端 + 插件后端 + 资源复制，一步完成）
+# 只产出 dist/，不会连接调试服务，可以安全地在任意环境执行
 pnpm run build
+
+# 单元测试（范式里的纯函数模块：配置清洗 / @机器人剥离 / 权限推导 / 消息段工厂 / 分发判定）
+pnpm run test
 
 # 仅构建 WebUI 前端（不构建后端）
 pnpm --filter @napcat-plugin-template/webui build
@@ -112,7 +125,7 @@ pnpm run typecheck
 
 ### 5. 调试 & 热重载
 
-项目通过 Vite 插件 `napcatHmrPlugin` 集成了热重载能力（已在 `vite.config.ts` 中配置），需要在 NapCat 端安装 `napcat-plugin-debug` 插件并启用。
+项目通过 Vite 插件 `napcatHmrPlugin` 集成了热重载能力，需要在 NapCat 端安装 `napcat-plugin-debug` 插件并启用。
 
 ```bash
 # 一键部署：构建 → 自动复制到远程插件目录 → 自动重载
@@ -122,15 +135,17 @@ pnpm run deploy
 pnpm run dev
 ```
 
-> `deploy` = `vite build`（构建完成时 Vite 插件自动部署+重载）  
-> `dev` = `vite build --watch`（每次重新构建后 Vite 插件自动部署+重载）  
-> 以上命令需在 `packages/plugin` 目录下运行（或用 `pnpm --filter @napcat-plugin-template/plugin exec ...`）。
+> 热部署插件只在 `--mode deploy` 下挂载，因此 `build` 与 `deploy` 是两条独立链路：
+> `build` = `vite build`（纯构建）  
+> `deploy` = `vite build --mode deploy`（构建完成时 Vite 插件自动部署+重载）  
+> `dev` = `vite build --watch --mode deploy`（每次重新构建后自动部署+重载）  
+> `build` / `deploy` / `dev` 在仓库根目录与 `packages/plugin` 目录下都可用。
 
 > **注意**：`pnpm run dev` 仅监听**插件后端**（`packages/plugin/src` 下非 webui 的文件）的变化。修改 WebUI 前端代码后，需先重新构建 WebUI（`pnpm --filter @napcat-plugin-template/webui build`），再重跑后端构建即可随插件一起部署。
 >
 > 如果只开发 WebUI 前端，推荐使用 `pnpm run dev:webui` 启动前端开发服务器，可实时预览。
 
-`packages/plugin/vite.config.ts` 中的 `copyAssetsPlugin` 会在构建时复制 WebUI 构建产物（由根 `pnpm run build` 先行构建），`napcatHmrPlugin()` 会自动连接调试服务 → 复制 dist/ 到远程 → 调用 reloadPlugin。
+`packages/plugin/vite.config.ts` 中的 `copyAssetsPlugin` 会在构建时复制 WebUI 构建产物（由根 `pnpm run build` / `deploy` 先行构建）；`napcatHmrPlugin()` 只在 `--mode deploy` 下挂载，会自动连接调试服务 → 复制 dist/ 到远程 → 调用 reloadPlugin。
 
 如需自定义调试服务地址或 token：
 

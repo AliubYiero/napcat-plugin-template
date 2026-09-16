@@ -22,6 +22,7 @@ import type {
     PluginHttpResponse
 } from 'napcat-types/napcat-onebot/network/plugin/types';
 import { pluginState } from '../core/state';
+import type { PluginConfig } from '../types';
 
 /**
  * 注册 API 路由
@@ -59,7 +60,8 @@ export function registerApiRoutes(ctx: NapCatPluginContext): void {
             if (!body) {
                 return res.status(400).json({ code: -1, message: '请求体为空' });
             }
-            pluginState.updateConfig(body as Partial<import('../types').PluginConfig>);
+            // 【必须】WebUI 提交属于外部输入, 走 replaceConfig 统一清洗后再落盘
+            pluginState.replaceConfig({ ...pluginState.config, ...body } as PluginConfig);
             ctx.logger.info('配置已保存');
             res.json({ code: 0, message: 'ok' });
         } catch (err) {

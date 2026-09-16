@@ -5,8 +5,10 @@
     "type": "module",
     "scripts": {
         "build": "pnpm --filter @napcat-plugin-template/webui build && pnpm --filter @napcat-plugin-template/plugin build",
+        "deploy": "pnpm --filter @napcat-plugin-template/webui build && pnpm --filter @napcat-plugin-template/plugin deploy",
+        "dev": "pnpm --filter @napcat-plugin-template/webui build && pnpm --filter @napcat-plugin-template/plugin dev",
         "dev:webui": "pnpm --filter @napcat-plugin-template/webui dev",
-        "watch": "pnpm --filter @napcat-plugin-template/plugin watch",
+        "test": "pnpm --filter @napcat-plugin-template/plugin test",
         "typecheck": "pnpm -r typecheck",
         "format": "biome format --write"
     },

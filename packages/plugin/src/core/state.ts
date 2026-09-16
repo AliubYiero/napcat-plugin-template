@@ -24,17 +24,44 @@ function isObject(v: unknown): v is Record<string, unknown> {
 
 /**
  * 配置清洗函数
- * 确保从文件读取的配置符合预期类型，防止运行时错误
+ *
+ * 【必须】一切外部输入的配置写回都必须经过本函数 (磁盘配置文件、WebUI 提交、
+ * 指令修改)。外部输入包括磁盘配置文件、WebUI 提交、指令修改。
+ * 【必须】清洗不抛错: 任何非法输入都回退默认值或丢弃条目, 保证插件在损坏的
+ * 配置文件下仍能启动。按字段形态分五类:
+ *
+ * | 形态       | 规则                                                    |
+ * | ---------- | ------------------------------------------------------- |
+ * | 标量       | typeof 守卫; 不合法则保留默认值, 不报错                  |
+ * | 数值       | typeof + 业务区间校验 (如 `> 0`); 不合法回退默认值       |
+ * | 字符串列表 | 容错输入格式, 统一转为规范形态后去空项                   |
+ * | 枚举数组   | 过滤非法值; **空数组是合法语义**, 不回退默认值           |
+ * | 嵌套对象   | 逐字段递归使用上述规则; 整体不合法则丢弃该条目           |
  */
-function sanitizeConfig(raw: unknown): PluginConfig {
+export function sanitizeConfig(raw: unknown): PluginConfig {
     if (!isObject(raw)) return { ...DEFAULT_CONFIG, groupConfigs: {} };
 
     const out: PluginConfig = { ...DEFAULT_CONFIG, groupConfigs: {} };
 
+    // 标量: typeof 守卫, 不合法保留默认
     if (typeof raw.enabled === 'boolean') out.enabled = raw.enabled;
-    if (typeof raw.debug === 'boolean') out.debug = raw.debug;
     if (typeof raw.commandPrefix === 'string') out.commandPrefix = raw.commandPrefix;
-    if (typeof raw.cooldownSeconds === 'number') out.cooldownSeconds = raw.cooldownSeconds;
+    if (typeof raw.allowAtBotTrigger === 'boolean') {
+        out.allowAtBotTrigger = raw.allowAtBotTrigger;
+    }
+
+    // 字符串列表: 容错输入格式 (WebUI 传入逗号分隔串, 配置文件内是数组),
+    // 统一转为规范形态后去空项。超管名单在清洗阶段一次性解析, 运行期不再解析。
+    if (typeof raw.adminUsers === 'string') {
+        out.adminUsers = raw.adminUsers
+            .split(',')
+            .map((id) => id.trim())
+            .filter((id) => id.length > 0);
+    } else if (Array.isArray(raw.adminUsers)) {
+        out.adminUsers = raw.adminUsers
+            .map((id) => String(id).trim())
+            .filter((id) => id.length > 0);
+    }
 
     // 群配置清洗
     if (isObject(raw.groupConfigs)) {
@@ -230,6 +257,10 @@ class PluginState {
 
     /**
      * 合并更新配置
+     *
+     * 【必须】仅限内部可信调用方使用 (字段已被上游清洗或来自 DEFAULT_CONFIG)。
+     * 来源不可信时 (WebUI 提交、指令修改、直接读盘) 一律走 replaceConfig,
+     * 由它统一清洗。
      */
     updateConfig(partial: Partial<PluginConfig>): void {
         this.config = { ...this.config, ...partial };
@@ -237,7 +268,7 @@ class PluginState {
     }
 
     /**
-     * 完整替换配置
+     * 完整替换配置 (入口统一清洗后再保存)
      */
     replaceConfig(config: PluginConfig): void {
         this.config = sanitizeConfig(config);

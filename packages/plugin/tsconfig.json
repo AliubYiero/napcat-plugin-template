@@ -3,11 +3,15 @@
     "compilerOptions": {
         "baseUrl": ".",
         "outDir": "dist",
-        "rootDir": "src"
+        // 类型检查覆盖 src 与 test, 因此根目录取包根 (构建产物由 vite 产出, 不走 tsc)
+        "rootDir": "."
     },
     "include": [
         "src/**/*.ts",
-        "src/**/*.json"
+        "src/**/*.json",
+        "test/**/*.ts",
+        "vite.config.ts",
+        "vitest.config.ts"
     ],
     "exclude": [
         "node_modules",

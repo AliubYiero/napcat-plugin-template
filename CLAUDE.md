@@ -23,7 +23,7 @@ NapCat 插件开发模板 (pnpm monorepo), 基于实际生产项目架构提炼�
 
 本仓库是通用模板; 范式文档正文零项目引用, 项目实例仅出现在各范式文档末尾"参考实现"一节:
 
-- [store-pattern](docs/store-pattern.md) → `core/state.ts` (`pluginState` 单例与 `loadDataFile` / `saveDataFile`); 模板暂无独立 store 目录, 新增列表型数据时按该范式建 `store/`。
+- [store-pattern](docs/store-pattern.md) → `store/BaseStore.ts` (通用列表型存储基类) 与 `store/SessionConfigStore.ts` (会话级配置基类); 全局状态单例 `core/state.ts` (`pluginState` 的 `loadDataFile` / `saveDataFile` 是基类的持久化底座)。具体业务 store 按该范式建子类, 单例与延迟实例化由子类实现。
 - [config-pattern](docs/config-pattern.md) → `packages/shared/src/index.ts` (类型)、`config.ts` (默认值 + Schema)、`core/state.ts` (`sanitizeConfig` 与运行时读写); `allowAtBotTrigger` / `adminUsers` 即四处同步的现成样例。
 - [permission-pattern](docs/permission-pattern.md) → `core/admin.ts` (`UserRole` / `ROLE_LEVEL` / `getUserRole` / `hasRole` / `isAdmin` / `isSuperAdmin`) 与 `adminUsers` 配置链。
 - [instruction-pattern](docs/instruction-pattern.md) → `handlers/message-handler.ts` (接收层五步)、`handlers/instruction-registry.ts` (注册表)、`handlers/instruction-dispatch.ts` (分发层与不对称反馈)、`handlers/commands/` (执行层)、`utils/at-bot-prefix.ts` (@机器人 剥离)。

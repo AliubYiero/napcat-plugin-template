@@ -117,6 +117,116 @@ export const xxxStore = XxxStore.getInstance();
 - [ ] 【必须】使用方 (service / handler) 通过 getter 缓存或直接调用 `getInstance()` 在方法内部获取实例。
 - [ ] 【必须】数据写入后统一走立即持久化方法 (如 `saveToFile()`), 不做批量延迟落盘。
 
+## 通用基类: BaseStore 与 SessionConfigStore
+
+模板提供两个可直接继承的基类, 免去每个 store 重写"读文件 → 查找 → 改内存 → 落盘"这套样板逻辑:
+
+| 基类 | 文件 | 职责 |
+| --- | --- | --- |
+| `BaseStore<T>` | `packages/plugin/src/store/BaseStore.ts` | 数组型数据的文件持久化与基础增删查改, 不含业务语义 |
+| `SessionConfigStore<T>` | `packages/plugin/src/store/SessionConfigStore.ts` | 在 `BaseStore` 之上, 按 `id + type` 定位一条会话配置 |
+
+两者都是 `abstract class`, 构造函数为 `protected`, 只能被继承、不能被直接 `new`; 基类**不提供** `getInstance`, 单例仍由子类按上文标准范式自行实现。
+
+### `BaseStore<T>` API
+
+| 方法 | 说明 |
+| --- | --- |
+| `getAll(): T[]` | 全部数据, **返回内存引用** |
+| `reload(): void` | 从文件重新加载, 丢弃内存数据 |
+| `findItem(predicate): T \| undefined` | 首个匹配项 (**内部引用**) |
+| `hasItem(predicate): boolean` | 是否存在匹配项 |
+| `addItem(item: T): void` | 追加一项并保存 |
+| `removeItem(predicate): boolean` | 删除首个匹配项并保存; 无匹配返回 `false` |
+| `updateItem(predicate, updater): boolean` | 用 `updater(旧项)` 的返回值替换首个匹配项并保存; 无匹配返回 `false` |
+| `reset(): void` | 清空并保存 |
+
+`protected loadFromFile()` / `protected saveToFile()` 由上述方法内部触发, 子类一般不直接调用 (【必须】不把 `saveToFile` 改成 `public`)。文件读取已做容错: 文件缺失或内容不是数组时回退为 `[]` 并告警, 不让损坏的数据文件拖垮插件启动。
+
+### `SessionConfigStore<T extends SessionConfigBase>` API
+
+数据项必须携带定位字段, 业务字段由泛型补充:
+
+```ts
+interface SessionConfigBase {
+    id: string;                     // 群号或用户 QQ 号
+    type: 'private' | 'group';      // 会话类型
+}
+```
+
+| 方法 | 说明 |
+| --- | --- |
+| `find(id, type): T \| undefined` | 查找某会话的配置 (**返回内部引用**) |
+| `set(id, type, config): void` | **完全替换**扩展字段; 记录不存在则新增。`config` 类型为 `Omit<T, 'id' \| 'type'>` |
+| `update(id, type, partial): void` | **部分更新**, 保留未提及的字段; 记录不存在则**抛 `Error`** |
+| `list(): T[]` | 全部配置 (浅拷贝数组) |
+| `remove(id, type): boolean` | 删除; 记录不存在返回 `false`, 不抛错 |
+| `has(id, type): boolean` | 是否已有配置 |
+
+`set` / `update` 会校验 `id` 非空与 `type` 合法, 失败抛 `Error`——尽早暴露开发者错误, 而不是写出一条永远查不回来的脏数据。本层**不做权限校验**: 是否允许改某会话的配置由 handler / service 按 [permission-pattern](./permission-pattern.md) 判断。
+
+### 完整示例: 会话级配置 store
+
+> 基类代码以 `packages/plugin/src/store/` 下的实际文件为准, 本节示例仅演示写法; 示例中的子类 `BiliLiveLimitStore` 不落地为模板文件。
+
+第 1 步, 定义配置项与具体 store 子类:
+
+```ts
+// src/store/bili-live-limit.store.ts
+import { SessionConfigStore, type SessionConfigBase } from './SessionConfigStore';
+
+/** 每个群/私聊的直播监听上限 */
+export interface BiliLiveLimit extends SessionConfigBase {
+    max: number;
+}
+
+export class BiliLiveLimitStore extends SessionConfigStore<BiliLiveLimit> {
+    private static readonly DATA_FILENAME = 'bili-live-limit.json';
+    private static instance: BiliLiveLimitStore | null = null;
+
+    private constructor() {
+        super(BiliLiveLimitStore.DATA_FILENAME);
+    }
+
+    static getInstance(): BiliLiveLimitStore {
+        if (!BiliLiveLimitStore.instance) {
+            BiliLiveLimitStore.instance = new BiliLiveLimitStore();
+        }
+        return BiliLiveLimitStore.instance;
+    }
+}
+// 注意: 文件末尾没有 `export const biliLiveLimitStore = BiliLiveLimitStore.getInstance()`
+```
+
+第 2 步, 在 service / handler 内部惰性获取实例并调用 (不要在模块加载期求值):
+
+```ts
+const store = BiliLiveLimitStore.getInstance();
+
+store.set(groupId, 'group', { max: 5 });        // 新增或整体覆盖
+const limit = store.find(groupId, 'group');      // { id, type, max } | undefined
+store.update(groupId, 'group', { max: 10 });     // 只改 max, 其余字段保留
+store.has(groupId, 'group');                     // true
+store.list();                                    // 全部会话配置
+store.remove(groupId, 'group');                  // true / false
+```
+
+落盘的数据文件是 `T[]` 数组:
+
+```json
+[
+    { "id": "123456", "type": "group", "max": 5 },
+    { "id": "78910", "type": "private", "max": 0 }
+]
+```
+
+### 使用注意
+
+- `find` / `getAll` 返回**内部引用**: 直接改动会绕过 `saveToFile`, 造成内存与磁盘不一致。修改一律走 `set` / `update` / `addItem` / `removeItem` / `updateItem`。
+- `set` 是整体覆盖而非合并: 需要保留未提及字段时用 `update`。
+- `update` 在记录不存在时抛 `Error`, 调用方要么先 `has` / `find` 兜底, 要么显式处理异常。
+- 数据文件名由子类通过 `super(DATA_FILENAME)` 传入, 建议 kebab-case (如 `bili-live-limit.json`)。
+
 ## 与其他范式的关系
 
 - 与**生命周期铁律**的关系: 全局状态单例 (如 `pluginState`) 本身也是模块加载期导出的单例, 但它安全, 前提是"构造期零 IO"——`ctx` 以 nullable 字段持有, getter 中检查未初始化即抛错, 真正的 IO 全部在 `init(ctx)` 之后才发生。store 遵循"调用时 `getInstance()`"的范式, 是为了让这一约束不依赖每个开发者的自觉, 而是由结构保证。见 [development-pattern](./development-pattern.md)。

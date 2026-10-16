@@ -8,8 +8,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { sanitizeConfig } from 'shared';
 import { DEFAULT_CONFIG } from '../src/config';
-import { sanitizeConfig } from '../src/core/state';
 
 describe('sanitizeConfig: 输入整体非法', () => {
     it('非对象输入回退默认配置', () => {

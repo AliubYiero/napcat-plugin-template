@@ -14,6 +14,11 @@ _Avoid_: "全局变量""context 单例"——它不是裸全局变量, 也不是
 store 单例不在模块加载期创建, 而是推迟到业务代码首次调用 `getInstance()` 时。目的: 保证任何文件 IO 都发生在 `plugin_init` 之后。
 _Avoid_: "导出即初始化""饿汉单例"——在本框架下属于反模式。
 
+### 字段描述符 (FIELDS)
+
+配置的唯一声明源: 一个 ctx-free 的字段数组, 每项声明 `kind` / `label` / `description` / `default`。配置接口类型、默认值、清洗与两套 WebUI (宿主自动面板 + 自定义前端表单) 全部由它派生; 新增配置项只改这一处。范式见 [docs/webui-config-pattern.md](docs/webui-config-pattern.md)。
+_Avoid_: "配置表""schema 文件"——它不是某个校验库的 schema, 也不是某一种 UI 的专属定义, 而是同时驱动两套 UI 的声明源。
+
 ### 指令定义 (InstructionDefinition)
 
 注册表中的一条指令声明: handler + 可选的 `requiredRole` / `scope` / `scopeRules`。分发层在调用 handler 前完成全部校验。

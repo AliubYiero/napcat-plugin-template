@@ -11,7 +11,8 @@ function resolvePluginName(): string {
     if (extMatch) return extMatch[1]
     const pluginMatch = location.pathname.match(/\/plugin\/([^/]+)/)
     if (pluginMatch) return pluginMatch[1]
-    return 'napcat-plugin-template'
+    // 构建期从 packages/plugin/package.json 注入, 与宿主注入的 __PLUGIN_NAME__ 保持一致
+    return __PLUGIN_ID__
 }
 
 const PLUGIN_NAME = resolvePluginName()

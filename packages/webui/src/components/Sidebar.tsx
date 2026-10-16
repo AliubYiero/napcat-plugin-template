@@ -1,4 +1,5 @@
-import type { PageId } from '../App'
+import type { ComponentType } from 'react'
+import { PAGE_LIST, type PageId, type PageIconName } from 'shared'
 import { IconDashboard, IconSettings, IconGroup, IconGithub, IconPlugin, IconSun } from './icons'
 
 interface SidebarProps {
@@ -6,11 +7,14 @@ interface SidebarProps {
     onPageChange: (page: PageId) => void
 }
 
-const menuItems: { id: PageId; label: string; icon: React.ReactNode }[] = [
-    { id: 'status', label: '仪表盘', icon: <IconDashboard size={18} /> },
-    { id: 'config', label: '插件配置', icon: <IconSettings size={18} /> },
-    { id: 'sessions', label: '会话管理', icon: <IconGroup size={18} /> },
-]
+/** 图标注册表: PageMeta.icon → 图标组件 */
+const PAGE_ICONS: Record<PageIconName, ComponentType<{ size?: number; className?: string }>> = {
+    dashboard: IconDashboard,
+    settings: IconSettings,
+    group: IconGroup,
+}
+
+const menuItems = [...PAGE_LIST].filter((page) => !page.hidden).sort((a, b) => a.order - b.order)
 
 export default function Sidebar({ currentPage, onPageChange }: SidebarProps) {
     return (
@@ -21,23 +25,26 @@ export default function Sidebar({ currentPage, onPageChange }: SidebarProps) {
                     <IconPlugin size={18} />
                 </div>
                 <div>
-                    <h1 className="font-bold text-sm leading-tight text-gray-900 dark:text-white">Plugin Template</h1>
+                    <h1 className="font-bold text-sm leading-tight text-gray-900 dark:text-white">{__PLUGIN_DISPLAY_NAME__}</h1>
                     <p className="text-[10px] text-gray-400 font-medium tracking-wider">NAPCAT PLUGIN</p>
                 </div>
             </div>
 
             {/* Nav */}
             <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto nav-stagger">
-                {menuItems.map((item) => (
-                    <div
-                        key={item.id}
-                        className={`sidebar-item ${currentPage === item.id ? 'active' : ''}`}
-                        onClick={() => onPageChange(item.id)}
-                    >
-                        <span className="sidebar-icon">{item.icon}</span>
-                        <span>{item.label}</span>
-                    </div>
-                ))}
+                {menuItems.map((item) => {
+                    const Icon = PAGE_ICONS[item.icon]
+                    return (
+                        <div
+                            key={item.id}
+                            className={`sidebar-item ${currentPage === item.id ? 'active' : ''}`}
+                            onClick={() => onPageChange(item.id)}
+                        >
+                            <span className="sidebar-icon"><Icon size={18} /></span>
+                            <span>{item.title}</span>
+                        </div>
+                    )
+                })}
             </nav>
 
             {/* Footer */}

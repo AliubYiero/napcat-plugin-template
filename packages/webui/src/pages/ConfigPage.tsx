@@ -3,19 +3,15 @@ import { noAuthFetch } from '../utils/api'
 import { showToast } from '../hooks/useToast'
 import type { PluginConfig } from '../types'
 import { IconTerminal } from '../components/icons'
+import ConfigForm, { type FieldRenderer } from '../components/ConfigForm'
 
 /**
- * 逗号分隔文本 → QQ 号数组
+ * 自定义字段覆盖注册表 (逃生舱)
  *
- * 与服务端 sanitizeConfig 的字符串列表规则保持一致 (去空项、去首尾空白),
- * 避免保存后前端展示与后端存储形态不一致。
+ * 只改前端呈现, 不改清洗语义。键为 FIELDS 中的字段 key。
+ * 例: adminUsers: MyAdminListEditor,
  */
-function parseAdminUsers(input: string): string[] {
-    return input
-        .split(',')
-        .map((id) => id.trim())
-        .filter((id) => id.length > 0)
-}
+const FIELD_OVERRIDES: Record<string, FieldRenderer> = {}
 
 export default function ConfigPage() {
     const [config, setConfig] = useState<PluginConfig | null>(null)
@@ -48,12 +44,11 @@ export default function ConfigPage() {
         }
     }, [config])
 
-    const updateField = <K extends keyof PluginConfig>(key: K, value: PluginConfig[K]) => {
+    const handleChange = useCallback((key: keyof PluginConfig, value: unknown) => {
         if (!config) return
-        const updated = { ...config, [key]: value }
-        setConfig(updated)
-        saveConfig({ [key]: value })
-    }
+        setConfig({ ...config, [key]: value })
+        saveConfig({ [key]: value } as Partial<PluginConfig>)
+    }, [config, saveConfig])
 
     if (!config) {
         return (
@@ -68,39 +63,17 @@ export default function ConfigPage() {
 
     return (
         <div className="space-y-6 stagger-children">
-            {/* 基础配置 */}
+            {/* 基础配置: 字段由 shared 的 FIELDS 驱动, 无需手写 */}
             <div className="card p-5 hover-lift">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-5">
                     <IconTerminal size={16} className="text-gray-400" />
                     基础配置
                 </h3>
-                <div className="space-y-5">
-                    <ToggleRow
-                        label="启用插件"
-                        desc="全局开关，关闭后不响应任何命令"
-                        checked={config.enabled}
-                        onChange={(v) => updateField('enabled', v)}
-                    />
-                    <ToggleRow
-                        label="@机器人 触发"
-                        desc="开启后 @机器人 + 前缀指令也可触发"
-                        checked={config.allowAtBotTrigger}
-                        onChange={(v) => updateField('allowAtBotTrigger', v)}
-                    />
-                    <InputRow
-                        label="命令前缀"
-                        desc="触发命令的前缀"
-                        value={config.commandPrefix}
-                        onChange={(v) => updateField('commandPrefix', v)}
-                    />
-                    <InputRow
-                        label="超级管理员 QQ"
-                        desc="多个 QQ 号用英文逗号分隔；超管不受会话类型限制"
-                        value={config.adminUsers.join(',')}
-                        onChange={(v) => updateField('adminUsers', parseAdminUsers(v))}
-                    />
-                    {/* TODO: 在这里添加你的配置项 */}
-                </div>
+                <ConfigForm
+                    config={config}
+                    onChange={handleChange}
+                    overrides={FIELD_OVERRIDES}
+                />
             </div>
 
             {saving && (
@@ -109,51 +82,6 @@ export default function ConfigPage() {
                     保存中...
                 </div>
             )}
-        </div>
-    )
-}
-
-/* ---- 子组件 ---- */
-
-function ToggleRow({ label, desc, checked, onChange }: {
-    label: string; desc: string; checked: boolean; onChange: (v: boolean) => void
-}) {
-    return (
-        <div className="flex items-center justify-between">
-            <div>
-                <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{label}</div>
-                <div className="text-xs text-gray-400 mt-0.5">{desc}</div>
-            </div>
-            <label className="toggle">
-                <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-                <div className="slider" />
-            </label>
-        </div>
-    )
-}
-
-function InputRow({ label, desc, value, type = 'text', onChange }: {
-    label: string; desc: string; value: string; type?: string; onChange: (v: string) => void
-}) {
-    const [local, setLocal] = useState(value)
-    useEffect(() => { setLocal(value) }, [value])
-
-    const handleBlur = () => {
-        if (local !== value) onChange(local)
-    }
-
-    return (
-        <div>
-            <div className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">{label}</div>
-            <div className="text-xs text-gray-400 mb-2">{desc}</div>
-            <input
-                className="input-field"
-                type={type}
-                value={local}
-                onChange={(e) => setLocal(e.target.value)}
-                onBlur={handleBlur}
-                onKeyDown={(e) => e.key === 'Enter' && handleBlur()}
-            />
         </div>
     )
 }

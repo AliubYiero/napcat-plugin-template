@@ -1,6 +1,6 @@
 {
     "name": "napcat-plugin-template",
-    "plugin": "",
+    "plugin": "NapCat 插件模板",
     "description": "",
     "version": "1.0.0",
     "type": "module",

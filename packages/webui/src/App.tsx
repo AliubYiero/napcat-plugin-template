@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { PAGES, DEFAULT_PAGE, type PageId } from 'shared'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
 import ToastContainer from './components/ToastContainer'
@@ -8,16 +9,8 @@ import SessionsPage from './pages/SessionsPage'
 import { useStatus } from './hooks/useStatus'
 import { useTheme } from './hooks/useTheme'
 
-export type PageId = 'status' | 'config' | 'sessions'
-
-const pageConfig: Record<PageId, { title: string; desc: string }> = {
-    status: { title: '仪表盘', desc: '插件运行状态与数据概览' },
-    config: { title: '插件配置', desc: '基础设置与参数配置' },
-    sessions: { title: '会话管理', desc: '管理群聊与好友的启用与禁用' }
-}
-
 function App() {
-    const [currentPage, setCurrentPage] = useState<PageId>('status')
+    const [currentPage, setCurrentPage] = useState<PageId>(DEFAULT_PAGE)
     const [isScrolled, setIsScrolled] = useState(false)
     const { status, fetchStatus } = useStatus()
 
@@ -42,6 +35,8 @@ function App() {
         }
     }
 
+    const currentMeta = PAGES.find((page) => page.id === currentPage) ?? PAGES[0]
+
     return (
         <div className="flex h-screen overflow-hidden bg-[#f8f9fa] dark:bg-[#18191C] text-gray-800 dark:text-gray-200 transition-colors duration-300">
             <ToastContainer />
@@ -50,8 +45,8 @@ function App() {
             <div className="flex-1 flex flex-col overflow-hidden">
                 <main className="flex-1 overflow-y-auto" onScroll={handleScroll}>
                     <Header
-                        title={pageConfig[currentPage].title}
-                        description={pageConfig[currentPage].desc}
+                        title={currentMeta.title}
+                        description={currentMeta.description}
                         isScrolled={isScrolled}
                         status={status}
                         currentPage={currentPage}

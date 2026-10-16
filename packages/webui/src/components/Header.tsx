@@ -1,4 +1,4 @@
-import type { PageId } from '../App'
+import type { PageId } from 'shared'
 import type { PluginStatus } from '../types'
 import { IconSave } from './icons'
 

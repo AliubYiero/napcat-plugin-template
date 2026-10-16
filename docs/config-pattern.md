@@ -1,43 +1,47 @@
 # NapCat 插件配置范式
 
-本文是 NapCat 插件配置层的通用范式, 覆盖配置从声明到生效的全链路: 类型定义、默认值与 Schema、清洗、运行时读写。遵循此范式时, 四环节分散在四个位置 (本文以类型文件、配置文件、全局状态文件称之)。强度档位 (必须/应该/可以) 见 [development-pattern.md](./development-pattern.md) 的"规范强度分级"。
+本文是 NapCat 插件配置层的通用范式, 覆盖配置从声明到生效的**数据语义**: 字段形态、清洗纪律、运行时读写与写入铁律。遵循此范式时, 配置项以一份**字段描述符**声明, 类型、默认值、清洗与两套 WebUI 由它派生——这部分结构见 [webui-config-pattern.md](./webui-config-pattern.md)。强度档位 (必须/应该/可以) 见 [development-pattern.md](./development-pattern.md) 的"规范强度分级"。
 
 ## 全链路总览
 
-一个配置项从声明到生效经过四个环节, 缺一不可:
+一个配置项从声明到生效的链路已收敛为"一处声明, 多处派生":
 
 ```
-(a) 类型定义          类型文件          PluginConfig
-(b) 默认值 + Schema   配置文件          DEFAULT_CONFIG / buildConfigSchema
-(c) 清洗              全局状态文件      sanitizeConfig
-(d) 运行时读写        全局状态文件      loadConfig / saveConfig / updateConfig
+FIELDS 字段描述符 (共享包, ctx-free 纯数据)   ← 唯一声明源
+  ├─ 类型       PluginConfig
+  ├─ 默认值     getDefaultConfig()
+  ├─ 清洗       sanitizeConfig()          ← 按 kind 派生
+  └─ 呈现       buildConfigSchema(ctx) / <ConfigForm>
+                (原生自动面板 / 自定义前端表单)
 ```
 
-四处分散是插件框架的结构所致 (Schema 构建器需要 ctx、清洗需要独立纯函数、类型需要独立于运行时), 属于可接受的设计。范式不试图消除它, 而是用 checklist 保证四处同步。
+不再需要在"类型文件 / 配置文件 / 全局状态文件"三处手工同步字段: 四环节中除运行时读写外全部从描述符派生, 详见 [webui-config-pattern.md](./webui-config-pattern.md)。
 
-## 核心约束: 四处同步 + 写入铁律
+## 核心约束: 单一声明源 + 写入铁律
 
-1. 【必须】新增或修改一个配置项时, 必须同步四处: 类型 (`PluginConfig` 加字段及注释)、默认值 (`DEFAULT_CONFIG`)、WebUI Schema (`buildConfigSchema` 加控件)、清洗 (`sanitizeConfig` 加分支)。
-2. 【必须】**一切外部输入的配置写回必须经过 `sanitizeConfig`**。外部输入包括磁盘配置文件、WebUI 提交、指令修改。直接把外部对象合并进内存配置等于放弃类型安全。范式:
+1. 【必须】**新增或修改配置项只改一处**——共享包里的字段描述符 (加 `kind` / `label` / `description` / `default`), 类型与清洗随之派生。禁止在多个文件重复罗列字段。
+2. 【必须】**一切外部输入的配置写回必须经过 `sanitizeConfig`**。外部输入包括磁盘配置文件、WebUI 提交 (含原生面板与自定义页)、指令修改。直接把外部对象合并进内存配置等于放弃类型安全。范式:
    - `loadConfig`: 读盘后经 `sanitizeConfig`; 文件不存在则写入默认配置落盘; 解析失败回退默认配置并记日志, 不抛错。
    - `replaceConfig(config)`: 入口统一 `sanitizeConfig(config)` 后再保存。
-   - `updateConfig(partial)`: 仅限内部可信调用方使用 (字段已被上游清洗或来自 `DEFAULT_CONFIG`); 若来源不可信, 先清洗。
+   - `updateConfig(partial)`: 仅限内部可信调用方使用 (字段已被上游清洗或来自默认值); 若来源不可信, 先清洗。
 
 ## 范式正文
 
-### 清洗规则分类表
+### 字段形态分类表
 
-【必须】`sanitizeConfig` 是纯函数: 输入 `unknown`, 输出保证符合 `PluginConfig`。按字段形态分五类, 每类一个正例:
+【必须】`sanitizeConfig` 是纯函数: 输入 `unknown`, 输出保证符合 `PluginConfig`。按字段形态分五类, 每类对应描述符的一个 `kind`, 由 `kind` 派生清洗规则:
 
-| 形态         | 规则                                                     |
-| ------------ | -------------------------------------------------------- |
-| 标量         | `typeof` 守卫; 不合法则保留默认值, 不报错                 |
-| 数值         | `typeof` + 业务区间校验 (如 `> 0`); 不合法回退默认值      |
-| 字符串列表   | 容错输入格式, 统一转为规范形态后去空项                    |
-| 枚举数组     | 过滤非法值; **空数组是合法语义**, 不回退默认值            |
-| 嵌套对象     | 逐字段递归使用上述规则; 整体不合法则丢弃该条目            |
+| 形态         | kind          | 规则                                              |
+| ------------ | ------------- | ------------------------------------------------- |
+| 标量         | `boolean` / `text` | `typeof` 守卫; 不合法则保留默认值, 不报错     |
+| 数值         | `number`      | `typeof` + 区间钳制; 不合法回退默认值             |
+| 字符串列表   | `stringList`  | 容错输入格式, 统一转为去空项数组                  |
+| 枚举数组     | `multiSelect` | 过滤非法值; **空数组是合法语义**, 不回退默认值    |
+| 嵌套对象     | (无内置 kind) | 逐字段递归使用上述规则; 整体不合法则丢弃该条目    |
 
-正例:
+前四类由 kind 自动派生, 无需手写; 只有**嵌套对象**这类复杂形态 (如按 id 索引的子表) 仍需手写清洗——它通常意味着该数据属于会话级配置, 应由 store 承载 (见下)。
+
+正例 (派生前的形态语义, 供仍手写嵌套清洗时参照):
 
 ```ts
 // 标量: typeof 守卫, 不合法保留默认
@@ -64,21 +68,6 @@ if (Array.isArray(raw.pushTypes)) {
 }
 ```
 
-字符串列表 (以"逗号分隔的管理员名单"为例):
-
-```ts
-if (typeof rawAdminUsers === 'string') {
-    out.adminUsers = rawAdminUsers
-        .split(',')
-        .map((id) => id.trim())
-        .filter((id) => id.length > 0);
-} else if (Array.isArray(rawAdminUsers)) {
-    out.adminUsers = rawAdminUsers
-        .map(String)
-        .filter((id) => id.length > 0);
-}
-```
-
 嵌套对象 (逐字段递归; 整体不合法则丢弃该条目):
 
 ```ts
@@ -101,21 +90,14 @@ if (isObject(raw.someNested)) {
 
 ### WebUI Schema
 
-Schema 由 `buildConfigSchema(ctx, ...)` 在运行时构建 (构建器方法挂在 `ctx.NapCatConfig` 上), 静态配置项遵循:
+WebUI 的两套呈现 (宿主自动面板 / 自定义前端表单) 均由描述符派生, 不再手写:
 
-- 【必须】控件类型与字段类型一一对应: boolean → 开关, text → 文本, number → 数字, select/multiSelect → 单选/多选。文本控件收集到的是字符串, 若逻辑字段是列表 (如管理员名单), 由清洗层负责转换, Schema 描述里写清输入格式。
-- 【应该】多选的候选值列表应有单一来源 (如 `VALID_PUSH_TYPES` 常量), 默认值与 Schema options 都从它派生, 避免两处硬编码。
-- 【必须】每个控件写 `description` 说明业务含义与生效时机 (如 "修改后下一轮生效")。
+- 【必须】每个字段声明一个**可渲染的 base kind**, 两套 UI 对同一字段语义等价 (后端 `kind` ↔ `ctx.NapCatConfig` 控件, 前端 `kind` ↔ React 控件)。
+- 【应该】枚举候选值有单一来源, 默认值与选项从它派生。
+- 【必须】每个字段写 `description` 说明业务含义与生效时机 (如 "修改后下一轮生效")。
+- 【必须】运行时数据只允许进入 `display` 展示块, 不得进入可保存配置项; 构建 Schema 需要运行时时**必须参数注入** (`buildConfigSchema(ctx)`), 禁止静态 import 业务模块 (TDZ/循环引用)。
 
-#### Schema 的静态/动态边界
-
-Schema 中允许出现运行时数据, 但【必须】只允许进入 **展示块** (`html` / `plainText`), 不得进入可保存配置项。通用规则:
-
-1. Schema 构建函数接受可选的运行时快照参数 (如 `buildConfigSchema(ctx, loginStatus)`), 快照为空时跳过对应展示块。
-2. 运行时状态 (登录信息、统计等) 只渲染为 HTML 展示块, 不参与配置保存。
-3. 外部状态变化后需要刷新展示块时, 通过状态回调重建整个 Schema。
-
-⚠️ 【必须】Schema 构建函数需要运行时数据时, **必须参数注入, 禁止配置模块静态 import 业务模块**——否则形成循环引用, 默认配置对象在模块加载期即触发 TDZ 错误。
+字段声明、kind 分类表、逃生舱 (覆盖注册表) 与前端渲染见 [webui-config-pattern](./webui-config-pattern.md)。
 
 ### 会话级配置不在本文件
 
@@ -132,20 +114,19 @@ Schema 中允许出现运行时数据, 但【必须】只允许进入 **展示�
 
 新增一个配置项时:
 
-- [ ] 【必须】类型文件: `PluginConfig` 加字段 + 注释
-- [ ] 【必须】配置文件: `DEFAULT_CONFIG` 加默认值
-- [ ] 【必须】配置文件: `buildConfigSchema` 加控件 (描述写清格式与生效时机)
-- [ ] 【必须】全局状态文件: `sanitizeConfig` 按形态分类加清洗分支
-- [ ] 【应该】若是枚举: 候选值抽常量, Schema 与清洗共用
+- [ ] 【必须】共享包: 在字段描述符数组加一项 (`kind` / `label` / `description` / `default`), 类型随之派生
+- [ ] 【应该】若是枚举: 候选值抽常量, 描述符与清洗共用
+- [ ] 【必须】确认描述符键集与配置接口一致 (`satisfies` + 键集单测)
 - [ ] 【必须】若是会话级字段: 它不属于本文件, 见 [store-pattern](./store-pattern.md), 并确认"单一查询入口"仍覆盖
 - [ ] 【应该】若语义有默认值选择 (尤其是启用开关): 在 `CONTEXT.md` 中声明, 必要时补 ADR
 
 ## 与其他范式的关系
 
+- 与 [webui-config-pattern.md](./webui-config-pattern.md): 本文只讲配置**数据的语义与清洗纪律**; 声明如何驱动类型/默认值/两套 WebUI 由该文承接。
 - 与**生命周期铁律**的关系: 配置读盘发生在 `plugin_init` 之后, 清洗是纯函数可在任何时机调用; Schema 构建需要 ctx, 只能在运行期进行。见 [development-pattern](./development-pattern.md)。
 - 与**指令分发范式**的关系: 接收层读取前缀来自配置 (运行期生效), 会话启用状态来自 store; 会话开关在消息入口最前端短路。见 [instruction-pattern](./instruction-pattern.md)。
 - 与**领域建模纪律**的关系: 启用开关等默认值语义是领域决策, 定型时记入 `CONTEXT.md` 并按需补 ADR。见 [development-pattern](./development-pattern.md) 的"领域建模纪律"与"ADR 纪律"。
 
 ## 参考实现
 
-napcat-plugin-bilibili-monitor 项目: 类型见 `packages/plugin/src/types.ts`, 默认值与 Schema 见 `packages/plugin/src/config.ts`, 清洗与运行时读写见 `packages/plugin/src/core/state.ts` 的 `sanitizeConfig` / `loadConfig` 等。
+本模板: 字段描述符、`PluginConfig`、默认值与清洗派生见 `packages/shared/src/config.ts`; 后端原生面板 Schema 映射见 `packages/plugin/src/config.ts` 的 `buildConfigSchema`; 运行时读写 (读盘清洗、`replaceConfig` / `updateConfig`) 见 `packages/plugin/src/core/state.ts`。

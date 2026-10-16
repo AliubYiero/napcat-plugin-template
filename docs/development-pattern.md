@@ -16,7 +16,7 @@
 
 ## 文档体系与骨架
 
-专项范式文档共六份, 全部遵循统一六段骨架:
+专项范式文档共七份, 全部遵循统一六段骨架:
 
 > **概述** (定位 + 适用范围) → **核心约束** (铁律, 必须/应该/可以 逐条标注) → **范式正文** (正反例并入正文, 按档位分层) → **标准范式清单** (checkbox, 逐条带档位) → **与其他范式的关系** → **参考实现** (2–3 行实例索引)
 
@@ -24,6 +24,7 @@
 | --- | --- |
 | [store-pattern.md](./store-pattern.md) | 数据持久化: 单例 store、延迟实例化、模块加载期禁 IO、会话级配置承载 |
 | [config-pattern.md](./config-pattern.md) | 配置全链路: 类型/默认值/Schema/清洗四环节、单一查询入口 |
+| [webui-config-pattern.md](./webui-config-pattern.md) | 配置与 WebUI 单一声明源: 一份描述符驱动类型/默认值/清洗/双 UI + 骨架元信息 |
 | [permission-pattern.md](./permission-pattern.md) | 权限: 四档角色模型、入口推导、线性比较、超管名单、按形态裁剪 |
 | [instruction-pattern.md](./instruction-pattern.md) | 指令分发: 接收→分发→执行链路、作用域校验、失败反馈策略 |
 | [message-send-pattern.md](./message-send-pattern.md) | 消息发送: 发送工具收敛、消息段工厂 |

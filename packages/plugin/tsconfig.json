@@ -4,7 +4,14 @@
         "baseUrl": ".",
         "outDir": "dist",
         // 类型检查覆盖 src 与 test, 因此根目录取包根 (构建产物由 vite 产出, 不走 tsc)
-        "rootDir": "."
+        "rootDir": ".",
+        // 隔离第三方包: napcat-types 只发布裸 .ts (非可独立编译单元), 直接引入会让
+        // tsc 深入其源码树报错。此处把 `napcat-types/*` 重定向到本地类型垫片,
+        // 使 typecheck 只检查项目自身代码 (见 CLAUDE.md「构建与验证」)。
+        "paths": {
+            "napcat-types/napcat-onebot": ["./types/napcat-types/napcat-onebot/index.d.ts"],
+            "napcat-types/napcat-onebot/*": ["./types/napcat-types/napcat-onebot/*"]
+        }
     },
     "include": [
         "src/**/*.ts",

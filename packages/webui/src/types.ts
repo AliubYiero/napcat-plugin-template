@@ -1,7 +1,13 @@
 /** WebUI 前端类型定义 */
 import type { PluginConfig } from '@napcat-plugin-template/shared';
 
-export type { PluginConfig, GroupConfig, ApiResponse } from '@napcat-plugin-template/shared';
+export type {
+    PluginConfig,
+    SessionConfig,
+    SessionConfigBase,
+    SessionType,
+    ApiResponse,
+} from '@napcat-plugin-template/shared';
 
 export interface PluginStatus {
     pluginName: string
@@ -15,12 +21,17 @@ export interface PluginStatus {
     }
 }
 
-export interface GroupInfo {
-    group_id: number
-    group_name: string
-    member_count: number
-    max_member_count: number
+/**
+ * 会话信息（群或好友），对应后端 GET /sessions 的归一化返回
+ */
+export interface SessionInfo {
+    /** 群号或用户 QQ 号 */
+    id: string
+    type: 'group' | 'private'
+    /** 群名 / 好友备注（无备注时取昵称） */
+    name: string
     enabled: boolean
-    /** 定时推送时间（如 '08:30'），null 表示未设置（模板默认不使用，按需扩展） */
-    scheduleTime?: string | null
+    /** 仅群会话提供 */
+    memberCount?: number
+    maxMemberCount?: number
 }

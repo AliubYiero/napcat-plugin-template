@@ -25,18 +25,37 @@ export interface PluginConfig {
      * WebUI 中以英文逗号分隔输入，经 sanitizeConfig 清洗后始终是数组。
      */
     adminUsers: string[];
-    /** 按群的单独配置 */
-    groupConfigs: Record<string, GroupConfig>;
     // TODO: 在这里添加你的插件配置项
 }
 
+// ==================== 会话级配置 ====================
+
 /**
- * 群配置
+ * 会话类型：群聊或私聊，与消息事件的 message_type 同域
  */
-export interface GroupConfig {
-    /** 是否启用此群的功能 */
+export type SessionType = 'private' | 'group';
+
+/**
+ * 会话配置项必须携带的定位字段，业务字段由具体 store 的泛型补充。
+ * 会话级配置不放在插件配置文件里，而是由 store 承载（见 docs/store-pattern.md）。
+ */
+export interface SessionConfigBase {
+    /** 群号或用户 QQ 号 */
+    id: string;
+    /** 会话类型 */
+    type: SessionType;
+}
+
+/**
+ * 会话级配置
+ *
+ * 启用开关为宽松判定取反：默认关闭（严格 `enabled === true` 才启用），
+ * 未记录或未写 `enabled` 一律视为禁用。
+ */
+export interface SessionConfig extends SessionConfigBase {
+    /** 是否启用此会话的功能，默认关闭 */
     enabled?: boolean;
-    // TODO: 在这里添加群级别的配置项
+    // TODO: 在这里添加会话级别的配置项
 }
 
 // ==================== API 响应 ====================

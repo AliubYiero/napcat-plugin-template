@@ -14,7 +14,7 @@ import fs from 'fs';
 import path from 'path';
 import type { NapCatPluginContext, PluginLogger } from 'napcat-types/napcat-onebot/network/plugin/types';
 import { DEFAULT_CONFIG } from '../config';
-import type { PluginConfig, GroupConfig } from '../types';
+import type { PluginConfig } from '../types';
 
 // ==================== 配置清洗工具 ====================
 
@@ -39,9 +39,9 @@ function isObject(v: unknown): v is Record<string, unknown> {
  * | 嵌套对象   | 逐字段递归使用上述规则; 整体不合法则丢弃该条目           |
  */
 export function sanitizeConfig(raw: unknown): PluginConfig {
-    if (!isObject(raw)) return { ...DEFAULT_CONFIG, groupConfigs: {} };
+    if (!isObject(raw)) return { ...DEFAULT_CONFIG };
 
-    const out: PluginConfig = { ...DEFAULT_CONFIG, groupConfigs: {} };
+    const out: PluginConfig = { ...DEFAULT_CONFIG };
 
     // 标量: typeof 守卫, 不合法保留默认
     if (typeof raw.enabled === 'boolean') out.enabled = raw.enabled;
@@ -61,18 +61,6 @@ export function sanitizeConfig(raw: unknown): PluginConfig {
         out.adminUsers = raw.adminUsers
             .map((id) => String(id).trim())
             .filter((id) => id.length > 0);
-    }
-
-    // 群配置清洗
-    if (isObject(raw.groupConfigs)) {
-        for (const [groupId, groupConfig] of Object.entries(raw.groupConfigs)) {
-            if (isObject(groupConfig)) {
-                const cfg: GroupConfig = {};
-                if (typeof groupConfig.enabled === 'boolean') cfg.enabled = groupConfig.enabled;
-                // TODO: 在这里添加你的群配置项清洗
-                out.groupConfigs[groupId] = cfg;
-            }
-        }
     }
 
     // TODO: 在这里添加你的配置项清洗逻辑
@@ -227,13 +215,13 @@ class PluginState {
                 }
                 this.ctx.logger.debug('已加载本地配置');
             } else {
-                this.config = { ...DEFAULT_CONFIG, groupConfigs: {} };
+                this.config = { ...DEFAULT_CONFIG };
                 this.saveConfig();
                 this.ctx.logger.debug('配置文件不存在，已创建默认配置');
             }
         } catch (error) {
             this.ctx.logger.error('加载配置失败，使用默认配置:', error);
-            this.config = { ...DEFAULT_CONFIG, groupConfigs: {} };
+            this.config = { ...DEFAULT_CONFIG };
         }
     }
 
@@ -273,24 +261,6 @@ class PluginState {
     replaceConfig(config: PluginConfig): void {
         this.config = sanitizeConfig(config);
         this.saveConfig();
-    }
-
-    /**
-     * 更新指定群的配置
-     */
-    updateGroupConfig(groupId: string, config: Partial<GroupConfig>): void {
-        this.config.groupConfigs[groupId] = {
-            ...this.config.groupConfigs[groupId],
-            ...config,
-        };
-        this.saveConfig();
-    }
-
-    /**
-     * 检查群是否启用（默认启用，除非明确设置为 false）
-     */
-    isGroupEnabled(groupId: string): boolean {
-        return this.config.groupConfigs[groupId]?.enabled !== false;
     }
 
     // ==================== 统计 ====================

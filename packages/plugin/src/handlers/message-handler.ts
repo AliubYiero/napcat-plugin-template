@@ -3,7 +3,7 @@
  *
  * 范式: docs/instruction-pattern.md 的 "一、接收层: handleMessage"
  * 职责固定为五步, 顺序不可调换:
- *   1. 群启用检查 → 2. 规范化 rawMessage → 3. 前缀检查 → 4. 切词 → 5. 分发
+ *   1. 会话启用检查 → 2. 规范化 rawMessage → 3. 前缀检查 → 4. 切词 → 5. 分发
  *
  * 【必须】接收层不认识指令语义, 也**不做权限校验**——权限属于指令语义,
  * 由分发层统一处理 (见 instruction-dispatch)。
@@ -15,6 +15,7 @@ import type { OB11Message } from 'napcat-types/napcat-onebot';
 import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plugin/types';
 import { getUserRole } from '../core/admin';
 import { pluginState } from '../core/state';
+import { sessionConfigService } from '../services/session-config.service';
 import { normalizeRawMessage } from '../utils/at-bot-prefix';
 import { dispatch } from './instruction-dispatch';
 
@@ -32,9 +33,12 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
         const rawMessage = event.raw_message || '';
         const { message_type, group_id } = event;
 
-        // 1. 群启用检查: 先于规范化与前缀检查, 避免在禁用群里做无谓的字符串处理
+        // 1. 会话启用检查: 先于规范化与前缀检查, 避免在禁用会话里做无谓的字符串处理。
+        // 群与私聊统一门禁, 默认关闭 (未显式开启即静默)。
         if (message_type === 'group' && group_id) {
-            if (!pluginState.isGroupEnabled(String(group_id))) return;
+            if (!sessionConfigService.isSessionEnabled(String(group_id), 'group')) return;
+        } else if (message_type === 'private' && event.user_id) {
+            if (!sessionConfigService.isSessionEnabled(String(event.user_id), 'private')) return;
         }
 
         // 2. 规范化: 按配置决定是否剥离开头 @机器人 的 CQ 段 (支持 @机器人 + 前缀指令)

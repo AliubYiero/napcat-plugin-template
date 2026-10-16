@@ -158,6 +158,7 @@ interface SessionConfigBase {
 | --- | --- |
 | `find(id, type): T \| undefined` | 查找某会话的配置 (**返回内部引用**) |
 | `set(id, type, config): void` | **完全替换**扩展字段; 记录不存在则新增。`config` 类型为 `Omit<T, 'id' \| 'type'>` |
+| `setMany(entries): void` | **批量 upsert**, **合并**扩展字段 (保留未提及的); 全程只落盘一次, 供批量开关等场景使用 |
 | `update(id, type, partial): void` | **部分更新**, 保留未提及的字段; 记录不存在则**抛 `Error`** |
 | `list(): T[]` | 全部配置 (浅拷贝数组) |
 | `remove(id, type): boolean` | 删除; 记录不存在返回 `false`, 不抛错 |
@@ -167,7 +168,7 @@ interface SessionConfigBase {
 
 ### 完整示例: 会话级配置 store
 
-> 基类代码以 `packages/plugin/src/store/` 下的实际文件为准, 本节示例仅演示写法; 示例中的子类 `BiliLiveLimitStore` 不落地为模板文件。
+> 基类代码以 `packages/plugin/src/store/` 下的实际文件为准, 本节示例仅演示写法; 示例中的子类 `BiliLiveLimitStore` 不落地为模板文件。本模板自带的会话配置子类见 `store/plugin-session-config.store.ts` 的 `PluginSessionConfigStore` (见文末"参考实现")。
 
 第 1 步, 定义配置项与具体 store 子类:
 
@@ -230,9 +231,11 @@ store.remove(groupId, 'group');                  // true / false
 ## 与其他范式的关系
 
 - 与**生命周期铁律**的关系: 全局状态单例 (如 `pluginState`) 本身也是模块加载期导出的单例, 但它安全, 前提是"构造期零 IO"——`ctx` 以 nullable 字段持有, getter 中检查未初始化即抛错, 真正的 IO 全部在 `init(ctx)` 之后才发生。store 遵循"调用时 `getInstance()`"的范式, 是为了让这一约束不依赖每个开发者的自觉, 而是由结构保证。见 [development-pattern](./development-pattern.md)。
-- 与**配置范式**的关系: 配置文件与数据文件共用全局状态的持久化机制, 但配置遵循 [config-pattern](./config-pattern.md) 的四环节链路, store 不直接读写配置。
+- 与**配置范式**的关系: **全局**配置遵循 [config-pattern](./config-pattern.md) 的四环节链路 (类型/默认值/Schema/清洗), **不**放进 store; 而**会话级配置 (群/好友)** 正属于本文——它随会话数无界增长、又是运行期可变数据, 由 store 承载, 不写进配置文件。会话配置的读写入口由 service 收敛 (见 [config-pattern](./config-pattern.md) 的"单一查询入口")。
 - 与**消息发送范式**的关系: store 推送通知时最终调用发送工具, 同样只在运行期调用, 见 [message-send-pattern](./message-send-pattern.md)。
 
 ## 参考实现
+
+本模板: 通用基类见 `packages/plugin/src/store/BaseStore.ts` 与 `store/SessionConfigStore.ts`; 会话配置的具体子类 `PluginSessionConfigStore` 见 `store/plugin-session-config.store.ts`, 其单一读写入口 service 见 `services/session-config.service.ts`; 全局状态单例见 `packages/plugin/src/core/state.ts` (其 `loadDataFile` / `saveDataFile` 是基类的持久化底座)。
 
 napcat-plugin-bilibili-monitor 项目: store 类见 `packages/plugin/src/store/`, 全局状态单例见 `packages/plugin/src/core/state.ts`。

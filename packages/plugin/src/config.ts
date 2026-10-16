@@ -9,9 +9,11 @@ import type { PluginConfig } from './types';
 /**
  * 默认配置
  *
- * 【必须】新增配置项时四处同步: 类型 (shared/src/index.ts 的 PluginConfig /
- * GroupConfig) → 本处默认值 → buildConfigSchema → sanitizeConfig (core/state.ts)。
+ * 【必须】新增配置项时四处同步: 类型 (shared/src/index.ts 的 PluginConfig) →
+ * 本处默认值 → buildConfigSchema → sanitizeConfig (core/state.ts)。
  * 默认值语义 (尤其启用开关的默认开启/关闭) 属于领域决策, 记入 CONTEXT.md。
+ *
+ * 注意: 会话级配置 (群/私聊) 不属于本配置文件, 由 store 承载 (见 docs/store-pattern.md)。
  */
 export const DEFAULT_CONFIG: PluginConfig = {
     enabled: true,
@@ -20,7 +22,6 @@ export const DEFAULT_CONFIG: PluginConfig = {
     allowAtBotTrigger: true,
     // 超级管理员名单, 默认空 (无人拥有超管档位)
     adminUsers: [],
-    groupConfigs: {},
     // TODO: 在这里添加你的默认配置值
 };
 

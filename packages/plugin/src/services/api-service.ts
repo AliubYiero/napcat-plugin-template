@@ -22,7 +22,13 @@ import type {
     PluginHttpResponse
 } from 'napcat-types/napcat-onebot/network/plugin/types';
 import { pluginState } from '../core/state';
-import type { PluginConfig } from '../types';
+import { sessionConfigService } from './session-config.service';
+import type { PluginConfig, SessionType } from '../types';
+
+/** 会话类型守卫: 收窄外部输入, 供路由复用 */
+function isSessionType(value: unknown): value is SessionType {
+    return value === 'group' || value === 'private';
+}
 
 /**
  * 注册 API 路由
@@ -70,73 +76,97 @@ export function registerApiRoutes(ctx: NapCatPluginContext): void {
         }
     });
 
-    // ==================== 群管理（无鉴权）====================
+    // ==================== 会话管理（无鉴权）====================
 
-    /** 获取群列表（附带各群启用状态） */
-    router.getNoAuth('/groups', async (_req, res) => {
+    /** 获取会话列表（群 + 好友，附带各会话启用状态） */
+    router.getNoAuth('/sessions', async (_req, res) => {
         try {
-            const groups = await ctx.actions.call(
-                'get_group_list',
-                {},
-                ctx.adapterName,
-                ctx.pluginManager.config
-            ) as Array<{ group_id: number; group_name: string; member_count: number; max_member_count: number }>;
+            const [groups, friends] = await Promise.all([
+                ctx.actions.call(
+                    'get_group_list',
+                    {},
+                    ctx.adapterName,
+                    ctx.pluginManager.config
+                ) as Promise<Array<{ group_id: number; group_name: string; member_count: number; max_member_count: number }>>,
+                ctx.actions.call(
+                    'get_friend_list',
+                    {},
+                    ctx.adapterName,
+                    ctx.pluginManager.config
+                ) as Promise<Array<{ user_id: number; nickname: string; remark?: string }>>,
+            ]);
 
-            const groupsWithConfig = (groups || []).map((group) => {
-                const groupId = String(group.group_id);
+            const groupSessions = (groups || []).map((group) => {
+                const id = String(group.group_id);
                 return {
-                    group_id: group.group_id,
-                    group_name: group.group_name,
-                    member_count: group.member_count,
-                    max_member_count: group.max_member_count,
-                    enabled: pluginState.isGroupEnabled(groupId),
+                    id,
+                    type: 'group' as const,
+                    name: group.group_name,
+                    enabled: sessionConfigService.isSessionEnabled(id, 'group'),
+                    memberCount: group.member_count,
+                    maxMemberCount: group.max_member_count,
                 };
             });
 
-            res.json({ code: 0, data: groupsWithConfig });
+            const friendSessions = (friends || []).map((friend) => {
+                const id = String(friend.user_id);
+                return {
+                    id,
+                    type: 'private' as const,
+                    name: friend.remark || friend.nickname,
+                    enabled: sessionConfigService.isSessionEnabled(id, 'private'),
+                };
+            });
+
+            res.json({ code: 0, data: [...groupSessions, ...friendSessions] });
         } catch (e) {
-            ctx.logger.error('获取群列表失败:', e);
+            ctx.logger.error('获取会话列表失败:', e);
             res.status(500).json({ code: -1, message: String(e) });
         }
     });
 
-    /** 更新单个群配置 */
-    router.postNoAuth('/groups/:id/config', async (req, res) => {
+    /** 更新单个会话配置 */
+    router.postNoAuth('/sessions/:type/:id/config', async (req, res) => {
         try {
-            const groupId = req.params?.id;
-            if (!groupId) {
-                return res.status(400).json({ code: -1, message: '缺少群 ID' });
+            const type = req.params?.type;
+            const id = req.params?.id;
+            if (!isSessionType(type)) {
+                return res.status(400).json({ code: -1, message: '非法的会话类型' });
+            }
+            if (!id) {
+                return res.status(400).json({ code: -1, message: '缺少会话 ID' });
             }
 
             const body = req.body as Record<string, unknown> | undefined;
-            const enabled = body?.enabled;
-            pluginState.updateGroupConfig(groupId, { enabled: Boolean(enabled) });
-            ctx.logger.info(`群 ${groupId} 配置已更新: enabled=${enabled}`);
+            const enabled = Boolean(body?.enabled);
+            sessionConfigService.setSessionEnabled(id, type, enabled);
+            ctx.logger.info(`会话 ${type}:${id} 配置已更新: enabled=${enabled}`);
             res.json({ code: 0, message: 'ok' });
         } catch (err) {
-            ctx.logger.error('更新群配置失败:', err);
+            ctx.logger.error('更新会话配置失败:', err);
             res.status(500).json({ code: -1, message: String(err) });
         }
     });
 
-    /** 批量更新群配置 */
-    router.postNoAuth('/groups/bulk-config', async (req, res) => {
+    /** 批量更新会话配置 */
+    router.postNoAuth('/sessions/bulk-config', async (req, res) => {
         try {
             const body = req.body as Record<string, unknown> | undefined;
-            const { enabled, groupIds } = body || {};
+            const { type, enabled, ids } = body || {};
 
-            if (typeof enabled !== 'boolean' || !Array.isArray(groupIds)) {
+            if (!isSessionType(type)) {
+                return res.status(400).json({ code: -1, message: '非法的会话类型' });
+            }
+            if (typeof enabled !== 'boolean' || !Array.isArray(ids)) {
                 return res.status(400).json({ code: -1, message: '参数错误' });
             }
 
-            for (const groupId of groupIds) {
-                pluginState.updateGroupConfig(String(groupId), { enabled });
-            }
+            sessionConfigService.setSessionsEnabled(ids.map(String), type, enabled);
 
-            ctx.logger.info(`批量更新群配置完成 | 数量: ${groupIds.length}, enabled=${enabled}`);
+            ctx.logger.info(`批量更新会话配置完成 | type=${type}, 数量: ${ids.length}, enabled=${enabled}`);
             res.json({ code: 0, message: 'ok' });
         } catch (err) {
-            ctx.logger.error('批量更新群配置失败:', err);
+            ctx.logger.error('批量更新会话配置失败:', err);
             res.status(500).json({ code: -1, message: String(err) });
         }
     });

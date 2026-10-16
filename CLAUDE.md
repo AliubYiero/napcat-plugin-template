@@ -4,7 +4,7 @@ NapCat 插件开发模板 (pnpm monorepo), 基于实际生产项目架构提炼�
 
 ## 仓库结构
 
-- `packages/plugin` — 插件后端发布物: 生命周期入口 `index.ts`、配置 `config.ts`、类型 `types.ts`、全局状态单例 `core/state.ts`、权限模块 `core/admin.ts`、`handlers/` (接收层 → 注册表 → 分发层 → `commands/` 执行层 + 发送工具 `utils.ts`)、纯函数 `utils/at-bot-prefix.ts`、WebUI API 路由 `services/api-service.ts`。
+- `packages/plugin` — 插件后端发布物: 生命周期入口 `index.ts`、配置 `config.ts`、类型 `types.ts`、全局状态单例 `core/state.ts`、权限模块 `core/admin.ts`、`store/` (通用基类 `BaseStore` / `SessionConfigStore` 与会话配置子类 `PluginSessionConfigStore`)、`services/` (`session-config.service.ts` 会话配置单一入口、`api-service.ts` WebUI API 路由)、`handlers/` (接收层 → 注册表 → 分发层 → `commands/` 执行层 + 发送工具 `utils.ts`)、纯函数 `utils/at-bot-prefix.ts`。
 - `packages/plugin/test` — vitest 单测, 与 `src/` 下的纯函数模块一一对应 (构建配置见 `vitest.config.ts`)。
 - `packages/webui` — React SPA 前端 (vite + tailwind), 独立构建。
 - `packages/shared` — 跨包共享类型 (plugin 的 types.ts 从此处重导出)。
@@ -23,8 +23,8 @@ NapCat 插件开发模板 (pnpm monorepo), 基于实际生产项目架构提炼�
 
 本仓库是通用模板; 范式文档正文零项目引用, 项目实例仅出现在各范式文档末尾"参考实现"一节:
 
-- [store-pattern](docs/store-pattern.md) → `store/BaseStore.ts` (通用列表型存储基类) 与 `store/SessionConfigStore.ts` (会话级配置基类); 全局状态单例 `core/state.ts` (`pluginState` 的 `loadDataFile` / `saveDataFile` 是基类的持久化底座)。具体业务 store 按该范式建子类, 单例与延迟实例化由子类实现。
-- [config-pattern](docs/config-pattern.md) → `packages/shared/src/index.ts` (类型)、`config.ts` (默认值 + Schema)、`core/state.ts` (`sanitizeConfig` 与运行时读写); `allowAtBotTrigger` / `adminUsers` 即四处同步的现成样例。
+- [store-pattern](docs/store-pattern.md) → `store/BaseStore.ts` (通用列表型存储基类)、`store/SessionConfigStore.ts` (会话级配置基类) 与 `store/plugin-session-config.store.ts` (会话配置具体子类 `PluginSessionConfigStore`); 会话配置的单一读写入口 `services/session-config.service.ts`; 全局状态单例 `core/state.ts` (`pluginState` 的 `loadDataFile` / `saveDataFile` 是基类的持久化底座)。具体业务 store 按该范式建子类, 单例与延迟实例化由子类实现。
+- [config-pattern](docs/config-pattern.md) → `packages/shared/src/index.ts` (类型)、`config.ts` (默认值 + Schema)、`core/state.ts` (`sanitizeConfig` 与运行时读写); `allowAtBotTrigger` / `adminUsers` 即四处同步的现成样例。会话级配置 (群/好友) **不**在此链路, 由 store 承载。
 - [permission-pattern](docs/permission-pattern.md) → `core/admin.ts` (`UserRole` / `ROLE_LEVEL` / `getUserRole` / `hasRole` / `isAdmin` / `isGroupAdminRole` / `isBotAdmin` / `isSuperAdmin`) 与 `adminUsers` 配置链。
 - [instruction-pattern](docs/instruction-pattern.md) → `handlers/message-handler.ts` (接收层五步)、`handlers/instruction-registry.ts` (注册表)、`handlers/instruction-dispatch.ts` (分发层与不对称反馈)、`handlers/commands/` (执行层)、`utils/at-bot-prefix.ts` (@机器人 剥离)。
 - [message-send-pattern](docs/message-send-pattern.md) → `handlers/utils.ts` (四个发送函数 + 8 个消息段工厂 + @全体成员 `sendAtAll` / `getAtAllQuota`)。

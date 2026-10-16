@@ -11,18 +11,10 @@
  * - 【必须】本层不做权限校验: 是否允许改某会话的配置由 handler / service 判断
  */
 
+import type { SessionConfigBase, SessionType } from '../types';
 import { BaseStore } from './BaseStore';
 
-/** 会话类型: 群聊或私聊, 与消息事件的 message_type 同域 */
-export type SessionType = 'private' | 'group';
-
-/** 会话配置项必须携带的定位字段, 业务字段由具体子类的泛型补充 */
-export interface SessionConfigBase {
-    /** 群号或用户 QQ 号 */
-    id: string;
-    /** 会话类型 */
-    type: SessionType;
-}
+export type { SessionConfigBase, SessionType };
 
 export abstract class SessionConfigStore<T extends SessionConfigBase> extends BaseStore<T> {
     protected constructor(dataFilename: string) {
@@ -54,6 +46,32 @@ export abstract class SessionConfigStore<T extends SessionConfigBase> extends Ba
             () => newItem
         );
         if (!updated) this.addItem(newItem);
+    }
+
+    /**
+     * 批量 upsert 会话配置, 全程只落盘一次
+     *
+     * 【必须】语义为"合并扩展字段" (与 set 的整体覆盖不同): 已存在的记录保留未提及的
+     * 字段。批量开关等场景下, 命中从未配置过的会话时新增, 命中已存在会话时更新。
+     * @throws 任一 entry 校验失败时抛 Error (id 为空 / type 非法)
+     */
+    setMany(entries: Array<{ id: string; type: SessionType; config: Partial<Omit<T, 'id' | 'type'>> }>): void {
+        for (const entry of entries) this.assertValidKey(entry.id, entry.type);
+
+        this.mutate((items) => {
+            const next = [...items];
+            for (const entry of entries) {
+                const index = next.findIndex(
+                    (item) => item.id === entry.id && item.type === entry.type
+                );
+                if (index === -1) {
+                    next.push({ id: entry.id, type: entry.type, ...entry.config } as T);
+                } else {
+                    next[index] = { ...next[index], ...entry.config, id: entry.id, type: entry.type } as T;
+                }
+            }
+            return next;
+        });
     }
 
     /**

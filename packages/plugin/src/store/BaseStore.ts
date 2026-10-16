@@ -99,6 +99,18 @@ export abstract class BaseStore<T> {
         this.saveToFile();
     }
 
+    /**
+     * 以一次落盘完成批量改动
+     *
+     * 【必须】供子类实现批量语义 (如 SessionConfigStore.setMany) 使用: 变更在内存中
+     * 一次性完成, 只在末尾保存一次, 避免批量操作触发 N 次整文件重写。
+     * @param mutator 接收当前数组, 返回替换后的数组 (不应原地修改传入数组)
+     */
+    protected mutate(mutator: (items: T[]) => T[]): void {
+        this.data = mutator(this.data);
+        this.saveToFile();
+    }
+
     // ==================== 持久化 ====================
 
     /**

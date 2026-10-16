@@ -74,13 +74,13 @@ block-beta
 | 文件 | 职责 |
 |------|------|
 | `packages/plugin/src/core/state.ts` | 全局状态单例 `pluginState`，管理 ctx 引用、配置持久化、数据文件读写、selfId、定时器、统计信息 |
-| `packages/shared/src/index.ts`（由 plugin/webui 重导出） | TypeScript 类型定义（`PluginConfig`, `GroupConfig`, `ApiResponse`） |
+| `packages/shared/src/index.ts`（由 plugin/webui 重导出） | TypeScript 类型定义（`PluginConfig`, `SessionConfig`, `ApiResponse`） |
 
 ### 业务服务
 
 | 文件 | 职责 |
 |------|------|
-| `packages/plugin/src/services/api-service.ts` | WebUI API 路由注册（状态、配置、群管理接口） |
+| `packages/plugin/src/services/api-service.ts` | WebUI API 路由注册（状态、配置、会话管理接口） |
 
 ### 消息处理
 
@@ -478,7 +478,7 @@ const schema = ctx.NapCatConfig.combine(
 - **配置持久化**：通过 `pluginState.updateConfig()` / `pluginState.replaceConfig()` 保存
 - **数据持久化**：通过 `pluginState.loadDataFile()` / `pluginState.saveDataFile()` 读写业务数据文件
 - **机器人 QQ 号**：通过 `pluginState.selfId` 获取（init 时自动异步获取）
-- **群配置**：使用 `pluginState.isGroupEnabled(groupId)` 检查
+- **会话配置（群/好友）**：不在配置文件里，由 `services/session-config.service`（`sessionConfigService.isSessionEnabled(id, type)` / `setSessionEnabled`）读写，默认关闭
 - **定时器管理**：将定时器存入 `pluginState.timers` Map，cleanup 时会自动全部清理
 - **资源清理**：在 `plugin_cleanup` 中必须清理定时器、关闭连接，否则会导致内存泄漏
 - **数据存储**：使用 `ctx.dataPath` 获取插件专属数据目录

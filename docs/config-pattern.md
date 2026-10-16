@@ -7,7 +7,7 @@
 一个配置项从声明到生效经过四个环节, 缺一不可:
 
 ```
-(a) 类型定义          类型文件          PluginConfig / GroupConfig
+(a) 类型定义          类型文件          PluginConfig
 (b) 默认值 + Schema   配置文件          DEFAULT_CONFIG / buildConfigSchema
 (c) 清洗              全局状态文件      sanitizeConfig
 (d) 运行时读写        全局状态文件      loadConfig / saveConfig / updateConfig
@@ -17,7 +17,7 @@
 
 ## 核心约束: 四处同步 + 写入铁律
 
-1. 【必须】新增或修改一个配置项时, 必须同步四处: 类型 (`PluginConfig` 或会话级 `GroupConfig` 加字段及注释)、默认值 (`DEFAULT_CONFIG`)、WebUI Schema (`buildConfigSchema` 加控件)、清洗 (`sanitizeConfig` 加分支)。
+1. 【必须】新增或修改一个配置项时, 必须同步四处: 类型 (`PluginConfig` 加字段及注释)、默认值 (`DEFAULT_CONFIG`)、WebUI Schema (`buildConfigSchema` 加控件)、清洗 (`sanitizeConfig` 加分支)。
 2. 【必须】**一切外部输入的配置写回必须经过 `sanitizeConfig`**。外部输入包括磁盘配置文件、WebUI 提交、指令修改。直接把外部对象合并进内存配置等于放弃类型安全。范式:
    - `loadConfig`: 读盘后经 `sanitizeConfig`; 文件不存在则写入默认配置落盘; 解析失败回退默认配置并记日志, 不抛错。
    - `replaceConfig(config)`: 入口统一 `sanitizeConfig(config)` 后再保存。
@@ -79,20 +79,20 @@ if (typeof rawAdminUsers === 'string') {
 }
 ```
 
-嵌套对象 (会话级配置, 见下节):
+嵌套对象 (逐字段递归; 整体不合法则丢弃该条目):
 
 ```ts
-if (isObject(raw.groupConfigs)) {
-    for (const [groupId, groupConfig] of Object.entries(raw.groupConfigs)) {
-        if (isObject(groupConfig)) {
-            const cfg: GroupConfig = {};
-            if (typeof groupConfig.enabled === 'boolean')
-                cfg.enabled = groupConfig.enabled;
-            out.groupConfigs[groupId] = cfg;
-        }
+if (isObject(raw.someNested)) {
+    for (const [key, entry] of Object.entries(raw.someNested)) {
+        if (!isObject(entry)) continue; // 整体不合法则丢弃该条目
+        const cleaned: SomeNestedConfig = {};
+        if (typeof entry.enabled === 'boolean') cleaned.enabled = entry.enabled;
+        out.someNested[key] = cleaned;
     }
 }
 ```
+
+> 注: 会话级配置 (群/好友) **不在**本文件, 由 store 承载, 见 [store-pattern](./store-pattern.md)。
 
 两条通用原则:
 
@@ -117,32 +117,33 @@ Schema 中允许出现运行时数据, 但【必须】只允许进入 **展示�
 
 ⚠️ 【必须】Schema 构建函数需要运行时数据时, **必须参数注入, 禁止配置模块静态 import 业务模块**——否则形成循环引用, 默认配置对象在模块加载期即触发 TDZ 错误。
 
-### 会话级配置与启用开关
+### 会话级配置不在本文件
 
-会话级配置 (群配置) 是 `Record<会话ID, GroupConfig>` 形态的嵌套配置项, 清洗时逐字段走标量规则。启用开关遵循三条规则:
+会话级配置 (群/好友) **不属于**插件配置文件: 它随会话数无界增长, 又是运行期可变的会话数据, 放进来会让每次 `saveConfig` 整体重写全部配置、并跟着 `/config` 整体下发。它由 store 承载 (独立的 `id + type` 数据文件), 权威范式见 [store-pattern](./store-pattern.md)。
 
-1. 【必须】**单一查询入口**。提供 `pluginState.isGroupEnabled(groupId)` 之类的唯一判定函数, 业务代码不得散落读取 `groupConfigs[id].enabled`。
-2. 【必须】**宽松判定**。判定式为 `enabled !== false`——缺失字段视为启用, 零配置可用。插件必须显式声明自己选择"默认开启"还是"默认关闭" (领域决策, 记入 `CONTEXT.md`, 必要时补 ADR)。
-3. 【必须】**入口短路**。消息处理在最前端做开关检查, 禁用的会话直接忽略消息, 不进入指令解析。
+配置范式仍约束与它相关的两点:
 
-开关的修改入口 (指令 / WebUI) 由插件自选, 范式不强制。
+1. 【必须】**单一查询入口**。提供 `isSessionEnabled(id, type)` 之类的唯一判定函数 (由 service 暴露), 业务代码不得散落判定。
+2. 【必须】**入口短路**。消息处理在最前端做会话开关检查, 禁用的会话直接忽略消息, 不进入指令解析 (见 [instruction-pattern](./instruction-pattern.md))。
+
+启用开关的默认值语义 (**默认开启** / **默认关闭**) 是领域决策, 记入 `CONTEXT.md`, 必要时补 ADR。开关的修改入口 (指令 / WebUI) 由插件自选, 范式不强制。
 
 ## 标准范式清单
 
 新增一个配置项时:
 
-- [ ] 【必须】类型文件: `PluginConfig` (或 `GroupConfig`) 加字段 + 注释
+- [ ] 【必须】类型文件: `PluginConfig` 加字段 + 注释
 - [ ] 【必须】配置文件: `DEFAULT_CONFIG` 加默认值
 - [ ] 【必须】配置文件: `buildConfigSchema` 加控件 (描述写清格式与生效时机)
 - [ ] 【必须】全局状态文件: `sanitizeConfig` 按形态分类加清洗分支
 - [ ] 【应该】若是枚举: 候选值抽常量, Schema 与清洗共用
-- [ ] 【必须】若是会话级字段: 确认 `isGroupEnabled` 式单一入口仍覆盖
+- [ ] 【必须】若是会话级字段: 它不属于本文件, 见 [store-pattern](./store-pattern.md), 并确认"单一查询入口"仍覆盖
 - [ ] 【应该】若语义有默认值选择 (尤其是启用开关): 在 `CONTEXT.md` 中声明, 必要时补 ADR
 
 ## 与其他范式的关系
 
 - 与**生命周期铁律**的关系: 配置读盘发生在 `plugin_init` 之后, 清洗是纯函数可在任何时机调用; Schema 构建需要 ctx, 只能在运行期进行。见 [development-pattern](./development-pattern.md)。
-- 与**指令分发范式**的关系: 接收层读取前缀与群启用状态都来自配置, 运行期生效; 会话开关在消息入口最前端短路。见 [instruction-pattern](./instruction-pattern.md)。
+- 与**指令分发范式**的关系: 接收层读取前缀来自配置 (运行期生效), 会话启用状态来自 store; 会话开关在消息入口最前端短路。见 [instruction-pattern](./instruction-pattern.md)。
 - 与**领域建模纪律**的关系: 启用开关等默认值语义是领域决策, 定型时记入 `CONTEXT.md` 并按需补 ADR。见 [development-pattern](./development-pattern.md) 的"领域建模纪律"与"ADR 纪律"。
 
 ## 参考实现

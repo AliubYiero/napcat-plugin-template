@@ -23,7 +23,7 @@ napcat-plugin-template/
 │   │       ├── utils/
 │   │       │   └── at-bot-prefix.ts  # @机器人 CQ 段剥离（纯函数）
 │   │       ├── handlers/
-│   │       │   ├── message-handler.ts      # 接收层：群启用 → 规范化 → 前缀 → 切词 → 分发
+│   │       │   ├── message-handler.ts      # 接收层：会话启用 → 规范化 → 前缀 → 切词 → 分发
 │   │       │   ├── instruction-registry.ts # 指令注册表（两级命名空间）
 │   │       │   ├── instruction-dispatch.ts # 分发层：统一校验、失败反馈不对称
 │   │       │   ├── utils.ts                # 发送工具 + 消息段工厂
@@ -56,11 +56,11 @@ napcat-plugin-template/
 │   │       └── pages/
 │   │           ├── StatusPage.tsx  # 仪表盘页面
 │   │           ├── ConfigPage.tsx  # 配置管理页面
-│   │           └── GroupsPage.tsx  # 群管理页面
+│   │           └── SessionsPage.tsx # 会话管理页面（群聊/好友）
 │   └── shared/               # 前后端共享类型（单一事实来源）
 │       ├── package.json
 │       └── src/
-│           └── index.ts      # PluginConfig / GroupConfig / ApiResponse 等
+│           └── index.ts      # PluginConfig / SessionConfig / ApiResponse 等
 ├── .github/
 │   ├── workflows/
 │   │   └── release.yml        # CI/CD 自动构建发布
@@ -232,9 +232,9 @@ graph TD
 | GET | `/status` | 获取运行状态、配置、统计 |
 | GET | `/config` | 获取当前配置 |
 | POST | `/config` | 保存配置（合并更新） |
-| GET | `/groups` | 获取群列表（含启用状态） |
-| POST | `/groups/:id/config` | 更新单个群配置 |
-| POST | `/groups/bulk-config` | 批量更新群配置 |
+| GET | `/sessions` | 获取会话列表（群 + 好友，含启用状态） |
+| POST | `/sessions/:type/:id/config` | 更新单个会话配置（`type` 为 `group` / `private`） |
+| POST | `/sessions/bulk-config` | 批量更新会话配置 |
 
 ### 前端调用方式
 
@@ -269,10 +269,13 @@ pluginState.log('error', '错误内容', error);
 pluginState.logDebug('调试信息'); // 仅 debug 模式输出
 
 // 配置操作
-pluginState.setConfig(ctx, { key: value });       // 合并更新
-pluginState.replaceConfig(ctx, fullConfig);        // 完整替换
-pluginState.updateGroupConfig(ctx, groupId, cfg);  // 更新群配置
-pluginState.isGroupEnabled(groupId);               // 检查群启用状态
+pluginState.updateConfig({ key: value });          // 合并更新
+pluginState.replaceConfig(fullConfig);             // 完整替换
+
+// 会话级配置（群/好友）不在配置文件里，由独立 service 承载（默认关闭）
+import { sessionConfigService } from '../services/session-config.service';
+sessionConfigService.setSessionEnabled(id, type, enabled); // type: 'group' | 'private'
+sessionConfigService.isSessionEnabled(id, type);           // 检查会话启用状态
 
 // 调用 OneBot API
 await pluginState.callApi('send_group_msg', { group_id, message });

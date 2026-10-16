@@ -1,24 +1,33 @@
 /**
  * 帮助指令 handler (`<前缀> help`)
  *
- * 本模板使用静态帮助文本。若帮助内容需要按角色输出不同版本
- * (User / Admin / SuperAdmin), 或需要渲染成图片, 见
- * docs/help-output-pattern.md 的完整流水线:
- * 权威源 → 生成脚本 → 产物落盘 → 运行时变体选择与文本回退。
+ * 帮助内容按角色与会话类型输出三个版本 (User / Admin / SuperAdmin),
+ * 优先发送图片, 图片缺失或发送失败时回退文本。
+ *
+ * 完整流水线见 docs/help-output-pattern.md:
+ * 权威源 (scripts/generateHelp/cmds/) → 生成脚本 → 产物落盘 → 运行时变体选择与回退。
+ * 本文件与 helpText.generated.ts 均为产物消费方, 请勿手改帮助内容本身。
  */
 
-import { pluginState } from '../../core/state';
+import { sendHelpMessage } from '../../utils/helpMessage';
 import type { InstructionHandler } from '../instruction-registry';
-import { sendReply } from '../utils';
+import { HELP_TEXT_MAP } from './helpText.generated';
 
-export const helpHandler: InstructionHandler = async (ctx, event) => {
-    // 前缀读自配置, 运行期生效
-    const prefix = pluginState.config.commandPrefix;
-    const lines = [
-        '[= 插件帮助 =]',
-        `${prefix} help   - 显示帮助信息`,
-        `${prefix} ping   - 测试连通性`,
-        `${prefix} status - 查看运行状态`,
-    ];
-    await sendReply(ctx, event, lines.join('\n'));
+/** 帮助图片文件名 (纯命名映射, 内容见 src/assets/) */
+const HELP_IMAGE = {
+    user: 'template-help-User.png',
+    admin: 'template-help-Admin.png',
+    superAdmin: 'template-help-SuperAdmin.png',
+} as const;
+
+export const helpHandler: InstructionHandler = async (
+    ctx,
+    event,
+    _commands,
+    userRole,
+) => {
+    await sendHelpMessage(ctx, event, userRole, {
+        imageMap: HELP_IMAGE,
+        textMap: HELP_TEXT_MAP,
+    });
 };

@@ -13,7 +13,7 @@
         "useIgnoreFile": true
     },
     "files": {
-        "includes": ["**", "!src/webui/**", "!.githooks/**"]
+        "includes": ["**", "!src/webui/**", "!.githooks/**", "!**/*.generated.ts"]
     },
     "formatter": {
         "indentStyle": "space",

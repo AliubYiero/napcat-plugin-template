@@ -10,6 +10,7 @@
         "dev:webui": "pnpm --filter @napcat-plugin-template/webui dev",
         "test": "pnpm --filter @napcat-plugin-template/plugin test",
         "typecheck": "pnpm -r typecheck",
+        "help:generate": "pnpm --filter @napcat-plugin-template/plugin help:generate",
         "format": "biome format --write"
     },
     "devDependencies": {

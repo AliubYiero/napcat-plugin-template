@@ -118,7 +118,7 @@ interface Instruction {
 - [ ] 【必须】在生成脚本的映射表注册 (cmd 配置 + 落盘 handler 目录)。
 - [ ] 【必须】执行生成脚本, 产物自动落盘 assets 与 handler 目录。
 - [ ] 【必须】新建 handler 文件, `HELP_IMAGE` 填入三个 PNG 文件名, `import { HELP_TEXT_MAP } from './helpText.generated'`。
-- [ ] 【必须】handler 导出形如 `helpXxxHandler` 的函数, 调用 `sendHelpMessage(ctx, event, { imageMap, textMap })`。
+- [ ] 【必须】handler 导出形如 `helpXxxHandler` 的函数, 调用 `sendHelpMessage(ctx, event, userRole, { imageMap, textMap })` (复用分发层推导好的 `UserRole`)。
 - [ ] 【必须】在指令解析层注册对应 help 指令。
 
 ## 与其他范式的关系
@@ -130,3 +130,5 @@ interface Instruction {
 ## 参考实现
 
 napcat-plugin-bilibili-monitor 项目: 权威源与生成脚本位于插件项目 `scripts/generateHelp/` (cmd 配置、生成入口与 `CMD_TARGETS` 映射表), 运行时工具见 `src/utils/helpMessage.ts` 的 `sendHelpMessage` 与各模块 `help.handler.ts`; 图片渲染由独立项目 `napcat-help-generate` 提供 (TS + express + Playwright, 无状态渲染), 其 API 详见该项目 README 与 CLAUDE.md。
+
+本模板 (monorepo) 亦已落地该范式, 作为单面板样例: 权威源与生成脚本在 `packages/plugin/scripts/generateHelp/` (用法见该目录 `README.md`), 运行时工具在 `packages/plugin/src/utils/helpMessage.ts` (`sendHelpMessage` 复用分发层推导的 `UserRole`, 图片与文本回退均走 `sendReply`), handler 在 `packages/plugin/src/handlers/commands/help.handler.ts`; 生成产物为 `packages/plugin/src/assets/template-help-{User,Admin,SuperAdmin}.png` 与 `packages/plugin/src/handlers/commands/helpText.generated.ts`。

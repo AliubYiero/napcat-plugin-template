@@ -91,6 +91,13 @@ function copyAssetsPlugin() {
                     console.log('[copy-assets] (o\'v\'o) 已复制 templates 目录');
                 }
 
+                // 4. 复制帮助图片资源（由 pnpm run help:generate 产出）
+                const assetsSrc = resolve(__dirname, 'src/assets');
+                if (fs.existsSync(assetsSrc)) {
+                    copyDirRecursive(assetsSrc, resolve(distDir, 'assets'));
+                    console.log('[copy-assets] (o\'v\'o) 已复制 assets 目录');
+                }
+
                 console.log('[copy-assets] (*\'v\'*) 资源复制完成！');
             } catch (error) {
                 console.error('[copy-assets] (;_;) 资源复制失败:', error);

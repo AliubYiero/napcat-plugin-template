@@ -28,6 +28,6 @@ NapCat 插件开发模板 (pnpm monorepo), 基于实际生产项目架构提炼�
 - [permission-pattern](docs/permission-pattern.md) → `core/admin.ts` (`UserRole` / `ROLE_LEVEL` / `getUserRole` / `hasRole` / `isAdmin` / `isGroupAdminRole` / `isBotAdmin` / `isSuperAdmin`) 与 `adminUsers` 配置链。
 - [instruction-pattern](docs/instruction-pattern.md) → `handlers/message-handler.ts` (接收层五步)、`handlers/instruction-registry.ts` (注册表)、`handlers/instruction-dispatch.ts` (分发层与不对称反馈)、`handlers/commands/` (执行层)、`utils/at-bot-prefix.ts` (@机器人 剥离)。
 - [message-send-pattern](docs/message-send-pattern.md) → `handlers/utils.ts` (四个发送函数 + 8 个消息段工厂 + @全体成员 `sendAtAll` / `getAtAllQuota`)。
-- [help-output-pattern](docs/help-output-pattern.md) → **本模板未落地** (流水线依赖外部渲染服务); 当前帮助输出是 `handlers/commands/help.handler.ts` 的静态文本。
+- [help-output-pattern](docs/help-output-pattern.md) → `packages/plugin/scripts/generateHelp/` (cmd 权威源 `cmds/`、生成入口 `index.ts` 与 `CMD_TARGETS`、用法见该目录 `README.md`)、运行时工具 `utils/helpMessage.ts` (`getHelpVariant` / `sendHelpMessage`)、消费方 `handlers/commands/help.handler.ts` 与产物 `handlers/commands/helpText.generated.ts`; 图片由外部项目 `napcat-help-generate` 渲染成 `src/assets/*.png` (`pnpm run help:generate` 产出, 产物入库)。
 
 以本模板开新项目时: 复制 `CONTEXT.md` 与本文件的骨架, 按新项目领域填充术语与实例索引; 范式文档保持通用, 不写回项目细节。

@@ -4,13 +4,13 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "build": "pnpm --filter @napcat-plugin-template/webui build && pnpm --filter @napcat-plugin-template/plugin build",
-        "deploy": "pnpm --filter @napcat-plugin-template/webui build && pnpm --filter @napcat-plugin-template/plugin deploy",
-        "dev": "pnpm --filter @napcat-plugin-template/webui build && pnpm --filter @napcat-plugin-template/plugin dev",
-        "dev:webui": "pnpm --filter @napcat-plugin-template/webui dev",
-        "test": "pnpm --filter @napcat-plugin-template/plugin test",
+        "build": "pnpm --filter webui build && pnpm --filter napcat-plugin-template build",
+        "deploy": "pnpm --filter webui build && pnpm --filter napcat-plugin-template deploy",
+        "dev": "pnpm --filter webui build && pnpm --filter napcat-plugin-template dev",
+        "dev:webui": "pnpm --filter webui dev",
+        "test": "pnpm --filter napcat-plugin-template test",
         "typecheck": "pnpm -r typecheck",
-        "help:generate": "pnpm --filter @napcat-plugin-template/plugin help:generate",
+        "help:generate": "pnpm --filter napcat-plugin-template help:generate",
         "format": "biome format --write"
     },
     "devDependencies": {

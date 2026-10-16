@@ -83,17 +83,37 @@ napcat-plugin-template/
 pnpm install
 ```
 
-### 2. 修改插件信息
+### 2. 修改插件信息与包名
 
-编辑 `packages/plugin/package.json`，修改以下字段：
+本模板是 pnpm monorepo，共三个包，各自 `package.json` 的 `name` 字段如下：
+
+| 包 | 路径 | 当前 `name` | 说明 |
+|----|------|-------------|------|
+| 插件后端（发布物） | `packages/plugin` | `napcat-plugin-template` | 插件唯一 ID，**必须**以 `napcat-plugin-` 开头；决定部署后的插件目录名与 WebUI 访问路径 |
+| WebUI 前端 | `packages/webui` | `webui` | 内部包（`private`），仅本地构建使用 |
+| 共享类型 | `packages/shared` | `shared` | 内部包（`private`），前后端类型单一事实来源 |
+
+**推荐做法**：把占位符 `template` 换成自己的插件名，例如 `napcat-plugin-your-name`。至少要修改插件包的字段：
 
 ```json
 {
     "name": "napcat-plugin-your-name",
+    "plugin": "你的插件显示名",
     "description": "你的插件描述",
     "author": "你的名字"
 }
 ```
+
+> ⚠️ **为什么 `name` 必须以 `napcat-plugin-` 开头**：NapCat 以该字段作为插件唯一 ID 来定位插件目录与 WebUI 路由（`/plugin/<name>/`）。若使用 `@scope/name` 这类不符合规范的名字，插件索引校验会失败，部署后 WebUI 页面也将无法访问（访问 `/plugin/@scope/name/` 会 404）。
+
+**若同时重命名内部包**（`webui` / `shared`）：这两个是 `private` 的 workspace 包，改名后必须同步更新以下引用，否则 `pnpm install` 将无法解析 workspace 依赖：
+
+- 根 `package.json` 里所有 `pnpm --filter <name>` 的过滤包名；
+- 各包 `package.json` 的 `devDependencies`（`"webui": "workspace:*"` / `"shared": "workspace:*"`）；
+- 源码 import：`packages/plugin/src/types.ts` 与 `packages/webui/src/types.ts` 中的 `from 'shared'`；
+- 最后重新执行 `pnpm install` 刷新 `pnpm-lock.yaml`。
+
+通常无需改动内部包名，只改插件包 `name` 即可。
 
 ### 3. 开发你的功能
 
@@ -114,7 +134,7 @@ pnpm run build
 pnpm run test
 
 # 仅构建 WebUI 前端（不构建后端）
-pnpm --filter @napcat-plugin-template/webui build
+pnpm --filter webui build
 
 # WebUI 前端开发服务器（实时预览，推荐纯前端开发时使用）
 pnpm run dev:webui
@@ -141,7 +161,7 @@ pnpm run dev
 > `dev` = `vite build --watch --mode deploy`（每次重新构建后自动部署+重载）  
 > `build` / `deploy` / `dev` 在仓库根目录与 `packages/plugin` 目录下都可用。
 
-> **注意**：`pnpm run dev` 仅监听**插件后端**（`packages/plugin/src` 下非 webui 的文件）的变化。修改 WebUI 前端代码后，需先重新构建 WebUI（`pnpm --filter @napcat-plugin-template/webui build`），再重跑后端构建即可随插件一起部署。
+> **注意**：`pnpm run dev` 仅监听**插件后端**（`packages/plugin/src` 下非 webui 的文件）的变化。修改 WebUI 前端代码后，需先重新构建 WebUI（`pnpm --filter webui build`），再重跑后端构建即可随插件一起部署。
 >
 > 如果只开发 WebUI 前端，推荐使用 `pnpm run dev:webui` 启动前端开发服务器，可实时预览。
 

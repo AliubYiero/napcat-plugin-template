@@ -6,7 +6,7 @@
  * 均来自 napcat-types 包，无需在此重复定义。
  *
  * 与 WebUI 共用的类型（PluginConfig, SessionConfig, ApiResponse）
- * 统一定义在 @napcat-plugin-template/shared，此处仅重导出。
+ * 统一定义在 shared 包，此处仅重导出。
  */
 export type {
     PluginConfig,
@@ -14,4 +14,4 @@ export type {
     SessionConfigBase,
     SessionType,
     ApiResponse,
-} from '@napcat-plugin-template/shared';
+} from 'shared';

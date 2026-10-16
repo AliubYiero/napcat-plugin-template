@@ -1,5 +1,5 @@
 /** WebUI 前端类型定义 */
-import type { PluginConfig } from '@napcat-plugin-template/shared';
+import type { PluginConfig } from 'shared';
 
 export type {
     PluginConfig,
@@ -7,7 +7,7 @@ export type {
     SessionConfigBase,
     SessionType,
     ApiResponse,
-} from '@napcat-plugin-template/shared';
+} from 'shared';
 
 export interface PluginStatus {
     pluginName: string

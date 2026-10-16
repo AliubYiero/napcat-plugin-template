@@ -198,7 +198,7 @@ pnpm run dev
 
 每次执行 `pnpm run build`、`pnpm run deploy` 或 `pnpm run dev`（后端文件变化时），`vite.config.ts` 中的 `copyAssetsPlugin` 会在 `writeBundle` 阶段自动：
 
-1. 构建 WebUI 前端（在仓库根目录执行 `pnpm run build`（或仅构建 webui：`pnpm --filter @napcat-plugin-template/webui build`））
+1. 构建 WebUI 前端（在仓库根目录执行 `pnpm run build`（或仅构建 webui：`pnpm --filter webui build`））
 2. 复制 WebUI 构建产物到 `dist/webui/`
 3. 生成精简的 `dist/package.json`
 4. 复制 `templates/` 目录（如果存在）

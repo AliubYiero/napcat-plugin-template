@@ -8,6 +8,8 @@
  *   禁止在业务代码中手写 `{ type: 'text', data: { ... } }` 字面量
  * - 【必须】四个发送函数统一返回 `Promise<boolean>`: 内部 try/catch, 失败记日志
  *   并返回 false, 不向调用方抛出
+ * - @全体成员 走 sendAtAll: 内部按 会话类型 → 发起人权限 → 配额 三重前置检查;
+ *   机器人自身资格由 can_at_all 表达, 不调 isBotAdmin (见 docs/message-send-pattern.md §3)
  *
  * 选型: 有 `event` 用 sendReply; 无 event 按目标选 sendGroupMessage / sendPrivateMessage。
  */
@@ -25,6 +27,7 @@ import type {
     OB11PostSendMsg,
 } from 'napcat-types/napcat-onebot';
 import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plugin/types';
+import { getUserRole, hasRole } from '../core/admin';
 import { pluginState } from '../core/state';
 
 // ==================== 发送函数 ====================
@@ -201,4 +204,66 @@ export function createForwardNode(
     const node: ForwardNode = { type: 'node', data: { nickname, content } };
     if (userId) node.data.user_id = userId;
     return node;
+}
+
+// ==================== @全体成员 ====================
+
+/** @全体成员 配额查询结果 (字段名沿用 OneBot 11 的 get_group_at_all_remain) */
+export interface AtAllRemain {
+    /** 机器人账号在该群是否具备 @全体成员 权限 */
+    can_at_all: boolean;
+    /** 该群当日剩余 @全体成员 次数 */
+    remain_at_all_count_for_group: number;
+    /** 机器人账号当日剩余 @全体成员 次数 (跨群共享) */
+    remain_at_all_count_for_uin: number;
+}
+
+/** 查询群内 @全体成员 剩余配额; 查询失败返回 null (按不可发送处理) */
+export async function getAtAllQuota(
+    ctx: NapCatPluginContext,
+    groupId: string | number
+): Promise<AtAllRemain | null> {
+    try {
+        return (await ctx.actions.call(
+            'get_group_at_all_remain',
+            { group_id: String(groupId) },
+            ctx.adapterName,
+            ctx.pluginManager.config
+        )) as AtAllRemain;
+    } catch (error) {
+        pluginState.logger.error('查询 @全体成员 配额失败:', error);
+        return null;
+    }
+}
+
+/**
+ * 发送 @全体成员; 返回是否发出
+ *
+ * 前置检查顺序固定为 **会话类型 → 发起人权限 → 配额**: 前两项是纯本地判定,
+ * 最先短路; 配额需一次 API 往返, 放在最后。
+ *
+ * 【必须】机器人自身是否管理员由 `can_at_all` 表达 (平台权威口径), 不额外调 isBotAdmin;
+ * 通用机器人身份自检见 permission-pattern 的 `isBotAdmin`。
+ * 【必须】失败反馈不对称: 非群聊/发起人权限不足静默返回, 配额不足回复提示。
+ */
+export async function sendAtAll(
+    ctx: NapCatPluginContext,
+    event: OB11Message,
+    text: string
+): Promise<boolean> {
+    // 1. 群聊限定: 非群聊没有"全体成员"这个概念
+    if (event.message_type !== 'group') return false;
+
+    // 2. 权限: 发起人须为群管理员及以上 (角色推导见 permission-pattern)
+    if (!hasRole(getUserRole(event), 'admin')) return false;
+
+    // 3. 配额: 机器人有权限, 且群内当日还有剩余次数
+    const quota = await getAtAllQuota(ctx, event.group_id!);
+    if (!quota || !quota.can_at_all || quota.remain_at_all_count_for_group <= 0) {
+        await sendReply(ctx, event, '@全体成员 次数已用完, 请稍后再试');
+        return false;
+    }
+
+    // 4. 构造并发送
+    return sendReply(ctx, event, [createAtMessage('all'), createTextMessage(` ${text}`)]);
 }

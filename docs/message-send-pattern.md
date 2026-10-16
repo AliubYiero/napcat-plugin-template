@@ -180,15 +180,17 @@ const atAllMessage = [
 
 它与普通 @ 的本质区别全在**平台侧的三重前置限制**: 任一不满足, 发送要么被平台拒绝、要么消息被静默丢弃 (客户端渲染为空)。因此本节的范式重心不是"怎么构造", 而是"发之前必须确认什么"。
 
-| 前置检查 | 判定方式 |
-| --- | --- |
-| 群聊限定 | `event.message_type === 'group'` |
-| 权限: 群管理员及以上 | `hasRole(getUserRole(event), 'admin')` (见 [permission-pattern](./permission-pattern.md)) |
-| 配额: 当日剩余次数 > 0 且机器人有权限 | `get_group_at_all_remain` API |
+| 前置检查 | 判定主体 | 判定方式 |
+| --- | --- | --- |
+| 群聊限定 | 会话 | `event.message_type === 'group'` |
+| 权限: 群管理员及以上 | **发起人** | `hasRole(getUserRole(event), 'admin')` (见 [permission-pattern](./permission-pattern.md)) |
+| 配额: 当日剩余次数 > 0 且机器人有权限 | **机器人** | `get_group_at_all_remain` API |
+
+⚠️ 第 2 行判的是**发起人** (谁有权命令机器人), 第 3 行判的才是**机器人自身**的能力——两者是不同主体, 不可混为一谈。机器人自身是否群管理员由 `can_at_all` 表达 (平台权威口径, 已同时含身份与配额), 因此 @全体成员 **不额外调用** `isBotAdmin`; 通用的机器人群身份自检见 [permission-pattern](./permission-pattern.md) 的 `isBotAdmin`。
 
 【必须】三项检查**缺一不可且必须前置**, 不能靠"发出去再看结果"反推——平台对越权与超额的失败反馈并不一致, 事后无法可靠区分失败原因。
 
-配额查询封装 (放在发送工具模块):
+配额查询封装 (已落地于本模板的发送工具模块 `handlers/utils.ts`, 下同):
 
 ```ts
 /** @全体成员 配额查询结果 (字段名沿用 OneBot 11 的 get_group_at_all_remain) */
@@ -224,7 +226,7 @@ async function getAtAllQuota(
 
 - 【必须】配额查询失败返回 `null` 而非抛错 (与四个发送函数同约定), 调用方按"不可发送"处理。**查询失败时不要盲目尝试发送**——这正是前置检查要规避的场景。
 
-自包含的发送函数:
+自包含的发送函数 (`sendAtAll`):
 
 ```ts
 /** 发送 @全体成员; 返回是否发出 */
@@ -306,14 +308,14 @@ await sendGroupMessage( pluginState.ctx, groupId, [
 - [ ] 【必须】需要 @ / 回复 / 图片 / 表情 / 文件或多段组合 → 用 `createXxxMessage` 工厂构造成消息段数组再发送。
 - [ ] 【必须】禁止在业务代码中直接调用 `ctx.actions.call('send_msg' | ...)`。
 - [ ] 【必须】范围内消息段一律用工厂构造; 范围外类型允许手写字面量, 且必须通过 `OB11MessageData` 类型检查。
-- [ ] 【必须】发送 @全体成员 前完成三项前置检查 (群聊限定 / 群管理员及以上 / 当日配额), 顺序为 会话类型 → 权限 → 配额。
+- [ ] 【必须】发送 @全体成员 前完成三项前置检查 (会话类型限定 / 发起人 admin / 机器人 `can_at_all` + 当日配额), 顺序为 会话类型 → 发起人权限 → 机器人配额; 机器人身份不自查 `isBotAdmin`。
 - [ ] 【应该】不重复 try/catch 发送逻辑; 关键路径按需检查返回的 `boolean`, 通知类可忽略。
 
 ## 与其他范式的关系
 
 - 与**生命周期铁律**的关系: 发送工具函数内部依赖全局状态的 logger 等, 只在 `plugin_init` 之后的运行期被调用; **不要在模块加载期调用任何发送函数**。前提约束见 [development-pattern](./development-pattern.md) 与 [store-pattern](./store-pattern.md)。
 - 与**指令分发范式**的关系: handler 回复用户用 `sendReply`; 主动推送 (无 event) 按目标类型选 `sendGroupMessage` / `sendPrivateMessage`。见 [instruction-pattern](./instruction-pattern.md)。
-- 与**权限范式**的关系: @全体成员 等"仅管理员可用"的发送能力, 需先用 `getUserRole` 推导档位、`hasRole` 判定是否达标。指令触发时优先由分发层的 `requiredRole` 声明完成, 无 event 的推送路径才自行判定。见 [permission-pattern](./permission-pattern.md)。
+- 与**权限范式**的关系: @全体成员 等"仅管理员可用"的发送能力, 需先用 `getUserRole` 推导档位、`hasRole` 判定是否达标 (发起人侧)。指令触发时优先由分发层的 `requiredRole` 声明完成, 无 event 的推送路径才自行判定。需要机器人**自身**能力自检时用 `isBotAdmin`; ⚠️ @全体成员 的机器人资格仍以 `can_at_all` 为准, 不用 `isBotAdmin` 替代。见 [permission-pattern](./permission-pattern.md)。
 
 ## 参考实现
 

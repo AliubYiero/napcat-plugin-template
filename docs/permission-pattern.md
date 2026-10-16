@@ -2,7 +2,7 @@
 
 本文是适用于任意 NapCat 插件项目的权限通用范式, 覆盖角色的推导、比较、裁剪与超级管理员名单的配置。各项目遵循此范式时, 应将角色推导与判定函数集中在一个权限模块中 (下称"权限模块")。强度档位 (必须/应该/可以) 见 [development-pattern.md](./development-pattern.md) 的"规范强度分级"。
 
-权限模块只回答"发送者是谁", 不回答"这条指令需要谁"——后者是指令定义里的门槛声明, 校验时机与反馈策略见 [instruction-pattern](./instruction-pattern.md)。
+权限模块回答参与者身份 (发送者 / 机器人), 不回答"这条指令需要谁"——后者是指令定义里的门槛声明, 校验时机与反馈策略见 [instruction-pattern](./instruction-pattern.md)。
 
 ## 核心约束
 
@@ -84,23 +84,55 @@ export function getUserRole(event: OB11Message): UserRole {
 
 - 【必须】推导按 superAdmin → privateUser → admin → user 的顺序**短路命中**, 一票定档, 不做档位叠加。
 - 【必须】`from` 记录来源会话, 供作用域校验与推送目标复用——下游拿 `userRole.from.id` 就知道该往哪回。
-- 【应该】`getUserRole` 是**纯函数** (只读事件的字段, 不触碰全局状态), 因此可被分发层、帮助输出、业务 handler 任意位置调用而不破坏生命周期铁律。唯一的例外是 `isSuperAdmin` 内部要读配置, 见"超级管理员"节。
+- 【应该】`getUserRole` 是**纯函数** (只读事件的字段, 不触碰全局状态), 因此可被分发层、帮助输出、业务 handler 任意位置调用而不破坏生命周期铁律。例外是 `isSuperAdmin` (读配置, 见"超级管理员"节) 与 `isBotAdmin` (读 `selfId` 并调 API, 见第三节)。
 
-### 三、群身份检查: isAdmin
+### 三、群身份检查: isAdmin 与 isBotAdmin
 
-【必须】群管理员身份只从消息事件的 `sender.role` 读取平台给出的判定结果 (`admin` = 群管理员, `owner` = 群主), **不自行调用群成员查询 API**——消息事件已带该字段, 额外查询只是浪费一次往返:
+群身份有两个主体: **发送者** (在消息事件里) 与 **机器人自身** (不在事件里, 需查 API)。两者共用同一个纯判定 `isGroupAdminRole`, 保证口径一致。
+
+**发送者侧: isAdmin**——【必须】只从消息事件的 `sender.role` 读取平台给出的判定结果 (`admin` = 群管理员, `owner` = 群主), **不自行调用群成员查询 API**——消息事件已带该字段, 额外查询只是浪费一次往返:
 
 ```ts
+export function isGroupAdminRole(role: string | undefined): boolean {
+    return role === 'admin' || role === 'owner';
+}
+
 function isAdmin(event: OB11Message): boolean {
     if (event.message_type !== 'group') return false;
     const role = (event.sender as Record<string, unknown>)?.role;
-    return role === 'admin' || role === 'owner';
+    return typeof role === 'string' && isGroupAdminRole(role);
+}
+```
+
+**机器人侧: isBotAdmin**——机器人自身在某群是否管理员/群主, **不在消息事件里**, 只能查一次 API:
+
+```ts
+async function isBotAdmin(
+    ctx: NapCatPluginContext,
+    groupId: string | number,
+): Promise<boolean> {
+    if (!pluginState.selfId) return false;
+    try {
+        const member = (await ctx.actions.call(
+            'get_group_member_info',
+            { group_id: String(groupId), user_id: pluginState.selfId },
+            ctx.adapterName,
+            ctx.pluginManager.config,
+        )) as { role?: string };
+        return isGroupAdminRole(member?.role);
+    } catch (error) {
+        pluginState.logger.error('查询机器人群身份失败:', error);
+        return false;
+    }
 }
 ```
 
 要点:
 
-- 【必须】该方法**只在群聊分支调用**。非群聊场景不存在"群身份", 因此返回 `false` 而非 `true`——返回 `true` 会让任何误在私聊路径上的调用静默通过权限判定。
+- 【必须】发送者与机器人共用纯判定 `isGroupAdminRole`, 保证两处口径一致。
+- 【必须】`isAdmin` **只在群聊分支调用**。非群聊场景不存在"群身份", 因此返回 `false` 而非 `true`——返回 `true` 会让任何误在私聊路径上的调用静默通过权限判定。
+- 【必须】`isBotAdmin` 实现 **fail-closed**: `selfId` 缺失、查询异常或返回非管理员, 一律 `false` 并记日志——用于权限门槛时失败必须等于拒绝。
+- 【必须】`isBotAdmin` **仅用于机器人能力自检**; @全体成员 的机器人资格以 `can_at_all` 为准, 不用本判定替代 (见 [message-send-pattern](./message-send-pattern.md))。
 - 【应该】`event.sender` 在类型定义中往往是宽松类型, 访问 `role` 时用 `as Record<string, unknown>` 收窄后再判等, 避免依赖可选字段链。
 
 ### 四、线性比较: hasRole
@@ -142,7 +174,7 @@ export function isSuperAdmin(qq: string): boolean {
 }
 ```
 
-【必须】`isSuperAdmin` 是全模块中**唯一**触碰全局状态的函数, 因此 `getUserRole` 也只在运行期可用; 不要在模块加载期求值任何角色。
+【必须】`isSuperAdmin` (读配置) 与 `isBotAdmin` (读 `selfId` 并调 API) 是模块中**仅有的两个**触碰全局状态的函数; 其余推导函数是纯函数, 但整个模块仍只在 `plugin_init` 之后的运行期可用。不要在任何模块加载期求值角色或调用 `isBotAdmin`。
 
 ### 六、按机器人形态裁剪档位
 
@@ -164,15 +196,16 @@ export function isSuperAdmin(qq: string): boolean {
 - [ ] 【必须】裁剪档位时收窄联合类型与等级表, 不只删除推导分支。
 - [ ] 【应该】新档位影响帮助输出时, 同步更新帮助变体映射 (见 [help-output-pattern](./help-output-pattern.md))。
 - [ ] 【必须】业务代码判断权限一律用 `hasRole(userRole, xxx)`, 不自行比较角色字符串。
+- [ ] 【应该】需要判定机器人自身群身份时用 `isBotAdmin(ctx, groupId)` (fail-closed); @全体成员 的机器人资格以 `can_at_all` 为准, 不用它替代。
 
 ## 与其他范式的关系
 
-- 与**生命周期铁律**的关系: 权限模块的推导函数是纯函数, 可模块加载期导出; 但 `isSuperAdmin` 读全局状态单例的配置, 整个模块只在 `plugin_init` 之后的运行期被调用。见 [development-pattern](./development-pattern.md) 与 [store-pattern](./store-pattern.md)。
+- 与**生命周期铁律**的关系: 权限模块的推导函数是纯函数, 可模块加载期导出; 但 `isSuperAdmin` 读全局状态单例的配置、`isBotAdmin` 读 `selfId` 并调 API, 整个模块只在 `plugin_init` 之后的运行期被调用。见 [development-pattern](./development-pattern.md) 与 [store-pattern](./store-pattern.md)。
 - 与**指令分发范式**的关系: 分发层在调用 handler 前用 `hasRole` 完成校验, 失败静默; `InstructionDefinition.requiredRole` 的取值即 `UserRole['role']`。见 [instruction-pattern](./instruction-pattern.md)。
 - 与**配置范式**的关系: 超管名单经 `sanitizeConfig` 一次性清洗为数组, 运行期无解析逻辑。见 [config-pattern](./config-pattern.md)。
 - 与**帮助输出范式**的关系: 帮助变体由"角色 + 会话类型"共同决定, `UserRole` 是映射的输入; 权限档位与帮助版本档位不是一一对应。见 [help-output-pattern](./help-output-pattern.md)。
-- 与**消息发送范式**的关系: 需要"仅管理员可用"的发送能力 (如 @全体成员) 时, 权限判定复用本文的 `getUserRole` / `hasRole`。见 [message-send-pattern](./message-send-pattern.md)。
+- 与**消息发送范式**的关系: "仅管理员可用"的指令门槛复用本文的 `getUserRole` / `hasRole` (发起人侧); 机器人自身能力自检 (如"机器人是否群管理员") 用 `isBotAdmin`。⚠️ @全体成员 的机器人资格以 `can_at_all` 为准, 不用 `isBotAdmin` 替代。见 [message-send-pattern](./message-send-pattern.md)。
 
 ## 参考实现
 
-napcat-plugin-bilibili-monitor 项目: 权限推导与比较见 `packages/plugin/src/core/admin.ts`; 超管名单 (`adminUsers`) 的类型、默认值与清洗分别见 `packages/plugin/src/types.ts`、`config.ts` 与 `core/state.ts`; 分发层的角色校验见同目录指令模块。
+napcat-plugin-bilibili-monitor 项目: 权限推导与比较 (`UserRole` / `ROLE_LEVEL` / `getUserRole` / `hasRole` / `isAdmin` / `isGroupAdminRole` / `isBotAdmin` / `isSuperAdmin`) 见 `packages/plugin/src/core/admin.ts`; 超管名单 (`adminUsers`) 的类型、默认值与清洗分别见 `packages/plugin/src/types.ts`、`config.ts` 与 `core/state.ts`; 分发层的角色校验见同目录指令模块。

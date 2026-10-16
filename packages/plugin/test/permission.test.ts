@@ -12,6 +12,7 @@ import {
     getUserRole,
     hasRole,
     isAdmin,
+    isGroupAdminRole,
     isSuperAdmin,
     type UserRole,
 } from '../src/core/admin';
@@ -94,7 +95,20 @@ describe('getUserRole', () => {
     });
 });
 
-describe('isAdmin (群身份检查)', () => {
+describe('isGroupAdminRole (纯角色判定)', () => {
+    it('owner / admin 视为管理员', () => {
+        expect(isGroupAdminRole('owner')).toBe(true);
+        expect(isGroupAdminRole('admin')).toBe(true);
+    });
+
+    it('member / 其它 / 缺失均非管理员', () => {
+        expect(isGroupAdminRole('member')).toBe(false);
+        expect(isGroupAdminRole('unknown')).toBe(false);
+        expect(isGroupAdminRole(undefined)).toBe(false);
+    });
+});
+
+describe('isAdmin (发送人群身份检查)', () => {
     it('只在群聊分支成立', () => {
         expect(isAdmin(groupMessage('20001', 'admin'))).toBe(true);
         expect(isAdmin(groupMessage('20001', 'owner'))).toBe(true);

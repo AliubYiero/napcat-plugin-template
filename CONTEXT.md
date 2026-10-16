@@ -24,6 +24,11 @@ _Avoid_: "命令对象"——不是命令模式, 只是声明式配置。
 在消息入口处由消息事件一次性推导出发送者角色 (superAdmin / privateUser / admin / user), 而非为每个用户配置权限。"好友私聊即提权"是领域决策: 与机器人互为好友的用户视为可信。
 _Avoid_: "权限配置""用户等级"——角色不是配置项, 也没有等级成长概念。
 
+### 机器人群身份 (bot group role)
+
+机器人自身在某个群内的角色 (`owner` / `admin` / `member`)。**不在消息事件里**, 只能通过 `get_group_member_info` 查 `pluginState.selfId` 得到; 与 `角色推导` (发起人) 并列, `isBotAdmin` 是它的布尔化判定 (owner/admin), 失败即拒 (fail-closed)。
+_Avoid_: "机器人权限""机器人白名单"——它是运行时查到的平台身份事实, 不是配置项; 且 @全体成员 的机器人资格以 `can_at_all` 为准, 本判定不作替代。
+
 ### `@机器人` 剥离 (at-bot strip)
 
 接收层在切词前剥掉消息开头**第一个**匹配 `selfId` 的 at CQ 段, 使 `@机器人 + 前缀指令` 可触发。默认开启 (`allowAtBotTrigger`), 其余 at 段保留不动; 剥离后执行 `trimStart()`, 避免前导空格导致前缀检查失败。

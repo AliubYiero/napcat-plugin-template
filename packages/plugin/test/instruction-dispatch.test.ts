@@ -8,8 +8,11 @@
 
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { UserRole, UserRoleName } from '../src/core/admin';
-import { instructionSetMapper, type InstructionDefinition } from '../src/handlers/instruction-registry';
 import { resolveDispatch } from '../src/handlers/instruction-dispatch';
+import {
+    type InstructionDefinition,
+    instructionSetMapper,
+} from '../src/handlers/instruction-registry';
 
 const noop = () => {};
 
@@ -33,7 +36,10 @@ beforeAll(() => {
     } satisfies Record<string, InstructionDefinition>;
 });
 
-function role(name: UserRoleName, type: 'group' | 'private' = 'group'): UserRole {
+function role(
+    name: UserRoleName,
+    type: 'group' | 'private' = 'group',
+): UserRole {
     return { userId: '1', role: name, from: { id: '1', type } };
 }
 
@@ -46,68 +52,117 @@ describe('resolveDispatch: 注册表命中', () => {
     it('二级指令命中, 参数切掉模块名与子指令名', () => {
         const decision = resolveDispatch(
             [FIXTURE_MODULE, 'adminonly', 'a', 'b'],
-            role('admin')
+            role('admin'),
         );
-        expect(decision).toMatchObject({ type: 'run', commands: ['a', 'b'] });
+        expect(decision).toMatchObject({
+            type: 'run',
+            commands: ['a', 'b'],
+        });
     });
 
     it('指令名不区分大小写', () => {
-        expect(resolveDispatch(['PING'], role('user')).type).toBe('run');
+        expect(resolveDispatch(['PING'], role('user')).type).toBe(
+            'run',
+        );
         expect(
-            resolveDispatch([FIXTURE_MODULE.toUpperCase(), 'ADMINONLY'], role('admin')).type
+            resolveDispatch(
+                [FIXTURE_MODULE.toUpperCase(), 'ADMINONLY'],
+                role('admin'),
+            ).type,
         ).toBe('run');
     });
 });
 
 describe('resolveDispatch: 静默路径 (防权限探测)', () => {
     it('未知指令静默', () => {
-        expect(resolveDispatch(['nope'], role('user')).type).toBe('silent');
-        expect(resolveDispatch([FIXTURE_MODULE, 'nope'], role('superAdmin')).type).toBe('silent');
+        expect(resolveDispatch(['nope'], role('user')).type).toBe(
+            'silent',
+        );
+        expect(
+            resolveDispatch(
+                [FIXTURE_MODULE, 'nope'],
+                role('superAdmin'),
+            ).type,
+        ).toBe('silent');
     });
 
     it('空指令静默', () => {
         expect(resolveDispatch([], role('user')).type).toBe('silent');
-        expect(resolveDispatch([''], role('user')).type).toBe('silent');
+        expect(resolveDispatch([''], role('user')).type).toBe(
+            'silent',
+        );
     });
 
     it('权限不足静默, 不回复"权限不足"', () => {
-        expect(resolveDispatch([FIXTURE_MODULE, 'adminonly'], role('user')).type).toBe('silent');
+        expect(
+            resolveDispatch(
+                [FIXTURE_MODULE, 'adminonly'],
+                role('user'),
+            ).type,
+        ).toBe('silent');
     });
 
     it('scopeRules 未命中形态时静默 (权限防线闭合)', () => {
         // max 只声明了 0 个与 1 个参数的形态
-        expect(resolveDispatch([FIXTURE_MODULE, 'max', 'a', 'b'], role('superAdmin')).type).toBe(
-            'silent'
-        );
+        expect(
+            resolveDispatch(
+                [FIXTURE_MODULE, 'max', 'a', 'b'],
+                role('superAdmin'),
+            ).type,
+        ).toBe('silent');
     });
 });
 
 describe('resolveDispatch: 作用域不符回复提示', () => {
     it('仅群聊指令在私聊使用 → 提示', () => {
-        expect(resolveDispatch([FIXTURE_MODULE, 'grouponly'], role('user', 'private'))).toEqual({
+        expect(
+            resolveDispatch(
+                [FIXTURE_MODULE, 'grouponly'],
+                role('user', 'private'),
+            ),
+        ).toEqual({
             type: 'scopeHint',
             message: '该指令仅限群聊使用',
         });
     });
 
     it('作用域一致时正常执行', () => {
-        expect(resolveDispatch([FIXTURE_MODULE, 'grouponly'], role('user', 'group')).type).toBe(
-            'run'
-        );
+        expect(
+            resolveDispatch(
+                [FIXTURE_MODULE, 'grouponly'],
+                role('user', 'group'),
+            ).type,
+        ).toBe('run');
     });
 });
 
 describe('resolveDispatch: scopeRules 按参数个数分档', () => {
     it('无参形态: admin 可用', () => {
-        expect(resolveDispatch([FIXTURE_MODULE, 'max'], role('admin')).type).toBe('run');
+        expect(
+            resolveDispatch([FIXTURE_MODULE, 'max'], role('admin'))
+                .type,
+        ).toBe('run');
     });
 
     it('无参形态: 低于 admin 静默', () => {
-        expect(resolveDispatch([FIXTURE_MODULE, 'max'], role('user')).type).toBe('silent');
+        expect(
+            resolveDispatch([FIXTURE_MODULE, 'max'], role('user'))
+                .type,
+        ).toBe('silent');
     });
 
     it('带参形态: 需要超管', () => {
-        expect(resolveDispatch([FIXTURE_MODULE, 'max', '5'], role('admin')).type).toBe('silent');
-        expect(resolveDispatch([FIXTURE_MODULE, 'max', '5'], role('superAdmin')).type).toBe('run');
+        expect(
+            resolveDispatch(
+                [FIXTURE_MODULE, 'max', '5'],
+                role('admin'),
+            ).type,
+        ).toBe('silent');
+        expect(
+            resolveDispatch(
+                [FIXTURE_MODULE, 'max', '5'],
+                role('superAdmin'),
+            ).type,
+        ).toBe('run');
     });
 });

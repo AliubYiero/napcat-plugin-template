@@ -42,7 +42,7 @@ import { pluginState } from '../core/state';
 export async function sendReply(
     ctx: NapCatPluginContext,
     event: OB11Message,
-    message: OB11PostSendMsg['message']
+    message: OB11PostSendMsg['message'],
 ): Promise<boolean> {
     try {
         const params: OB11PostSendMsg = {
@@ -55,7 +55,12 @@ export async function sendReply(
                 ? { user_id: String(event.user_id) }
                 : {}),
         };
-        await ctx.actions.call('send_msg', params, ctx.adapterName, ctx.pluginManager.config);
+        await ctx.actions.call(
+            'send_msg',
+            params,
+            ctx.adapterName,
+            ctx.pluginManager.config,
+        );
         return true;
     } catch (error) {
         pluginState.logger.error('发送消息失败:', error);
@@ -67,14 +72,14 @@ export async function sendReply(
 export async function sendGroupMessage(
     ctx: NapCatPluginContext,
     groupId: number | string,
-    message: OB11PostSendMsg['message']
+    message: OB11PostSendMsg['message'],
 ): Promise<boolean> {
     try {
         await ctx.actions.call(
             'send_group_msg',
             { group_id: String(groupId), message },
             ctx.adapterName,
-            ctx.pluginManager.config
+            ctx.pluginManager.config,
         );
         return true;
     } catch (error) {
@@ -87,14 +92,14 @@ export async function sendGroupMessage(
 export async function sendPrivateMessage(
     ctx: NapCatPluginContext,
     userId: number | string,
-    message: OB11PostSendMsg['message']
+    message: OB11PostSendMsg['message'],
 ): Promise<boolean> {
     try {
         await ctx.actions.call(
             'send_private_msg',
             { user_id: String(userId), message },
             ctx.adapterName,
-            ctx.pluginManager.config
+            ctx.pluginManager.config,
         );
         return true;
     } catch (error) {
@@ -108,10 +113,12 @@ export async function sendForwardMsg(
     ctx: NapCatPluginContext,
     target: number | string,
     isGroup: boolean,
-    nodes: ForwardNode[]
+    nodes: ForwardNode[],
 ): Promise<boolean> {
     try {
-        const actionName = isGroup ? 'send_group_forward_msg' : 'send_private_forward_msg';
+        const actionName = isGroup
+            ? 'send_group_forward_msg'
+            : 'send_private_forward_msg';
         const params: Record<string, unknown> = { message: nodes };
         if (isGroup) {
             params.group_id = String(target);
@@ -122,7 +129,7 @@ export async function sendForwardMsg(
             actionName as 'send_group_forward_msg',
             params as never,
             ctx.adapterName,
-            ctx.pluginManager.config
+            ctx.pluginManager.config,
         );
         return true;
     } catch (error) {
@@ -159,7 +166,10 @@ export function createFaceMessage(id: string): OB11MessageFace {
  * `qq` 取 `'all'` 即 @全体成员 (不是独立段类型, 只是 at 段的特殊形态);
  * 该参数对 `all` 无意义, 故 `all` 场景不传 `name`。
  */
-export function createAtMessage(qq: string, name?: string): OB11MessageAt {
+export function createAtMessage(
+    qq: string,
+    name?: string,
+): OB11MessageAt {
     const data: OB11MessageAt['data'] = { qq };
     if (name) data.name = name;
     return { type: 'at', data };
@@ -180,16 +190,24 @@ export function createMFaceMessage(
     emojiPackageId: number,
     emojiId: string,
     key: string,
-    summary: string
+    summary: string,
 ): OB11MessageMFace {
     return {
         type: 'mface',
-        data: { emoji_package_id: emojiPackageId, emoji_id: emojiId, key, summary },
+        data: {
+            emoji_package_id: emojiPackageId,
+            emoji_id: emojiId,
+            key,
+            summary,
+        },
     };
 }
 
 /** 创建文件消息段 */
-export function createFileMessage(file: string, name?: string): OB11MessageFile {
+export function createFileMessage(
+    file: string,
+    name?: string,
+): OB11MessageFile {
     const data: OB11MessageFile['data'] = { file };
     if (name) data.name = name;
     return { type: 'file', data };
@@ -199,9 +217,12 @@ export function createFileMessage(file: string, name?: string): OB11MessageFile 
 export function createForwardNode(
     nickname: string,
     content: OB11MessageMixType,
-    userId?: string
+    userId?: string,
 ): ForwardNode {
-    const node: ForwardNode = { type: 'node', data: { nickname, content } };
+    const node: ForwardNode = {
+        type: 'node',
+        data: { nickname, content },
+    };
     if (userId) node.data.user_id = userId;
     return node;
 }
@@ -221,14 +242,14 @@ export interface AtAllRemain {
 /** 查询群内 @全体成员 剩余配额; 查询失败返回 null (按不可发送处理) */
 export async function getAtAllQuota(
     ctx: NapCatPluginContext,
-    groupId: string | number
+    groupId: string | number,
 ): Promise<AtAllRemain | null> {
     try {
         return (await ctx.actions.call(
             'get_group_at_all_remain',
             { group_id: String(groupId) },
             ctx.adapterName,
-            ctx.pluginManager.config
+            ctx.pluginManager.config,
         )) as AtAllRemain;
     } catch (error) {
         pluginState.logger.error('查询 @全体成员 配额失败:', error);
@@ -249,7 +270,7 @@ export async function getAtAllQuota(
 export async function sendAtAll(
     ctx: NapCatPluginContext,
     event: OB11Message,
-    text: string
+    text: string,
 ): Promise<boolean> {
     // 1. 群聊限定: 非群聊没有"全体成员"这个概念
     if (event.message_type !== 'group') return false;
@@ -258,12 +279,22 @@ export async function sendAtAll(
     if (!hasRole(getUserRole(event), 'admin')) return false;
 
     // 3. 配额: 机器人有权限, 且群内当日还有剩余次数
-    const quota = await getAtAllQuota(ctx, event.group_id!);
-    if (!quota || !quota.can_at_all || quota.remain_at_all_count_for_group <= 0) {
-        await sendReply(ctx, event, '@全体成员 次数已用完, 请稍后再试');
+    const quota = await getAtAllQuota(ctx, event.group_id);
+    if (
+        !quota?.can_at_all ||
+        quota.remain_at_all_count_for_group <= 0
+    ) {
+        await sendReply(
+            ctx,
+            event,
+            '@全体成员 次数已用完, 请稍后再试',
+        );
         return false;
     }
 
     // 4. 构造并发送
-    return sendReply(ctx, event, [createAtMessage('all'), createTextMessage(` ${text}`)]);
+    return sendReply(ctx, event, [
+        createAtMessage('all'),
+        createTextMessage(` ${text}`),
+    ]);
 }

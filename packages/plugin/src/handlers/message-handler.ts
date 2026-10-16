@@ -28,7 +28,10 @@ let warnedMissingSelfId = false;
  * 各步的静默约定: 群未启用、前缀不匹配、未知指令、权限不足一律静默且不记日志;
  * 只有@机器人 剥离成功与 selfId 无效两种情况记 debug 日志。
  */
-export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message): Promise<void> {
+export async function handleMessage(
+    ctx: NapCatPluginContext,
+    event: OB11Message,
+): Promise<void> {
     try {
         const rawMessage = event.raw_message || '';
         const { message_type, group_id } = event;
@@ -36,26 +39,41 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
         // 1. 会话启用检查: 先于规范化与前缀检查, 避免在禁用会话里做无谓的字符串处理。
         // 群与私聊统一门禁, 默认关闭 (未显式开启即静默)。
         if (message_type === 'group' && group_id) {
-            if (!sessionConfigService.isSessionEnabled(String(group_id), 'group')) return;
+            if (
+                !sessionConfigService.isSessionEnabled(
+                    String(group_id),
+                    'group',
+                )
+            )
+                return;
         } else if (message_type === 'private' && event.user_id) {
-            if (!sessionConfigService.isSessionEnabled(String(event.user_id), 'private')) return;
+            if (
+                !sessionConfigService.isSessionEnabled(
+                    String(event.user_id),
+                    'private',
+                )
+            )
+                return;
         }
 
         // 2. 规范化: 按配置决定是否剥离开头 @机器人 的 CQ 段 (支持 @机器人 + 前缀指令)
-        const allowAtBotTrigger = pluginState.config.allowAtBotTrigger;
+        const allowAtBotTrigger =
+            pluginState.config.allowAtBotTrigger;
         const trimmed = rawMessage.trim();
         const normalized = normalizeRawMessage(
             rawMessage,
             pluginState.selfId,
-            allowAtBotTrigger
+            allowAtBotTrigger,
         );
         if (allowAtBotTrigger) {
             if (!pluginState.selfId && !warnedMissingSelfId) {
                 warnedMissingSelfId = true;
-                pluginState.logger.debug('机器人 QQ 号未知, 已跳过 @机器人 前缀剥离');
+                pluginState.logger.debug(
+                    '机器人 QQ 号未知, 已跳过 @机器人 前缀剥离',
+                );
             } else if (normalized !== trimmed) {
                 pluginState.logger.debug(
-                    `剥离 @机器人 前缀: "${trimmed}" -> "${normalized}"`
+                    `剥离 @机器人 前缀: "${trimmed}" -> "${normalized}"`,
                 );
             }
         }
@@ -65,7 +83,10 @@ export async function handleMessage(ctx: NapCatPluginContext, event: OB11Message
         if (!normalized.startsWith(prefix)) return;
 
         // 4. 切词: 去前缀后按空白切分, 空串会切出 [''], 由分发层的参数检查兜底
-        const commands = normalized.slice(prefix.length).trim().split(/\s+/);
+        const commands = normalized
+            .slice(prefix.length)
+            .trim()
+            .split(/\s+/);
 
         // 5. 分发: 角色在入口一次性推导, 分发层与 handler 复用同一个 UserRole
         await dispatch(ctx, event, commands, getUserRole(event));

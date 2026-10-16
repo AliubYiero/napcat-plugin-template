@@ -1,26 +1,32 @@
-import { useState, useEffect } from 'react'
-import { parseStringList } from 'shared'
-import type { StringListFieldDescriptor } from 'shared'
-import type { ValueFieldProps } from './types'
+import { useEffect, useState } from 'react';
+import type { StringListFieldDescriptor } from 'shared';
+import { parseStringList } from 'shared';
+import type { ValueFieldProps } from './types';
 
 export default function StringListField({
     field,
     value,
     onChange,
 }: ValueFieldProps<StringListFieldDescriptor, readonly string[]>) {
-    const [local, setLocal] = useState(value.join(','))
-    useEffect(() => { setLocal(value.join(',')) }, [value])
+    const [local, setLocal] = useState(value.join(','));
+    useEffect(() => {
+        setLocal(value.join(','));
+    }, [value]);
 
     const commit = () => {
-        const parsed = parseStringList(local)
-        if (parsed.join(',') !== value.join(',')) onChange(parsed)
-    }
+        const parsed = parseStringList(local);
+        if (parsed.join(',') !== value.join(',')) onChange(parsed);
+    };
 
     return (
         <div>
-            <div className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">{field.label}</div>
+            <div className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">
+                {field.label}
+            </div>
             {field.description && (
-                <div className="text-xs text-gray-400 mb-2">{field.description}</div>
+                <div className="text-xs text-gray-400 mb-2">
+                    {field.description}
+                </div>
             )}
             <input
                 className="input-field"
@@ -32,5 +38,5 @@ export default function StringListField({
                 onKeyDown={(e) => e.key === 'Enter' && commit()}
             />
         </div>
-    )
+    );
 }

@@ -110,10 +110,14 @@ export interface DisplayFieldDescriptor extends FieldBase {
 }
 
 /** 带 key 的有值字段 (key 必须是 PluginConfig 的键) */
-export type ConfigValueField = ValueFieldDescriptor & { key: keyof PluginConfig };
+export type ConfigValueField = ValueFieldDescriptor & {
+    key: keyof PluginConfig;
+};
 
 /** 布局/展示字段 */
-export type ConfigLayoutField = SectionFieldDescriptor | DisplayFieldDescriptor;
+export type ConfigLayoutField =
+    | SectionFieldDescriptor
+    | DisplayFieldDescriptor;
 
 /** 描述符统一类型 */
 export type ConfigField = ConfigValueField | ConfigLayoutField;
@@ -187,7 +191,10 @@ export const FIELDS = [
 ] as const satisfies readonly ConfigField[];
 
 // 编译期断言: FIELDS 的有值字段键集与 PluginConfig 键集完全一致 (编辑器可见)
-type FieldKeys = Extract<(typeof FIELDS)[number], { key: string }>['key'];
+type FieldKeys = Extract<
+    (typeof FIELDS)[number],
+    { key: string }
+>['key'];
 type KeysInSync = [keyof PluginConfig] extends [FieldKeys]
     ? [FieldKeys] extends [keyof PluginConfig]
         ? true
@@ -203,7 +210,9 @@ export function getDefaultConfig(): PluginConfig {
     const out: Record<string, unknown> = {};
     for (const field of FIELDS) {
         if (!('key' in field)) continue;
-        out[field.key] = cloneValue((field as ConfigValueField).default);
+        out[field.key] = cloneValue(
+            (field as ConfigValueField).default,
+        );
     }
     return out as unknown as PluginConfig;
 }
@@ -237,28 +246,41 @@ export function sanitizeConfig(raw: unknown): PluginConfig {
     const out: Record<string, unknown> = {};
     for (const field of FIELDS) {
         if (!('key' in field)) continue;
-        out[field.key] = sanitizeValue(field as ConfigValueField, source[field.key]);
+        out[field.key] = sanitizeValue(
+            field as ConfigValueField,
+            source[field.key],
+        );
     }
     return out as unknown as PluginConfig;
 }
 
-function sanitizeValue(field: ConfigValueField, value: unknown): unknown {
+function sanitizeValue(
+    field: ConfigValueField,
+    value: unknown,
+): unknown {
     switch (field.kind) {
         case 'boolean':
             return typeof value === 'boolean' ? value : field.default;
         case 'text':
             return typeof value === 'string' ? value : field.default;
         case 'number': {
-            if (typeof value !== 'number' || !Number.isFinite(value)) {
+            if (
+                typeof value !== 'number' ||
+                !Number.isFinite(value)
+            ) {
                 return field.default;
             }
             let result = value;
-            if (typeof field.min === 'number') result = Math.max(result, field.min);
-            if (typeof field.max === 'number') result = Math.min(result, field.max);
+            if (typeof field.min === 'number')
+                result = Math.max(result, field.min);
+            if (typeof field.max === 'number')
+                result = Math.min(result, field.max);
             return result;
         }
         case 'select':
-            return field.options.some((option) => option.value === value)
+            return field.options.some(
+                (option) => option.value === value,
+            )
                 ? value
                 : field.default;
         case 'multiSelect': {
@@ -285,7 +307,10 @@ export function parseStringList(input: string): string[] {
         .filter((item) => item.length > 0);
 }
 
-function decodeStringList(value: unknown, fallback: readonly string[]): string[] {
+function decodeStringList(
+    value: unknown,
+    fallback: readonly string[],
+): string[] {
     if (typeof value === 'string') return parseStringList(value);
     if (Array.isArray(value)) {
         return value
@@ -295,6 +320,12 @@ function decodeStringList(value: unknown, fallback: readonly string[]): string[]
     return [...fallback];
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-    return value !== null && typeof value === 'object' && !Array.isArray(value);
+function isPlainObject(
+    value: unknown,
+): value is Record<string, unknown> {
+    return (
+        value !== null &&
+        typeof value === 'object' &&
+        !Array.isArray(value)
+    );
 }

@@ -1,22 +1,37 @@
-import type { ComponentType } from 'react'
-import { PAGE_LIST, type PageId, type PageIconName } from 'shared'
-import { IconDashboard, IconSettings, IconGroup, IconGithub, IconPlugin, IconSun } from './icons'
+import type { ComponentType } from 'react';
+import { PAGE_LIST, type PageIconName, type PageId } from 'shared';
+import {
+    IconDashboard,
+    IconGithub,
+    IconGroup,
+    IconPlugin,
+    IconSettings,
+    IconSun,
+} from './icons';
 
 interface SidebarProps {
-    currentPage: PageId
-    onPageChange: (page: PageId) => void
+    currentPage: PageId;
+    onPageChange: (page: PageId) => void;
 }
 
 /** 图标注册表: PageMeta.icon → 图标组件 */
-const PAGE_ICONS: Record<PageIconName, ComponentType<{ size?: number; className?: string }>> = {
+const PAGE_ICONS: Record<
+    PageIconName,
+    ComponentType<{ size?: number; className?: string }>
+> = {
     dashboard: IconDashboard,
     settings: IconSettings,
     group: IconGroup,
-}
+};
 
-const menuItems = [...PAGE_LIST].filter((page) => !page.hidden).sort((a, b) => a.order - b.order)
+const menuItems = [...PAGE_LIST]
+    .filter((page) => !page.hidden)
+    .sort((a, b) => a.order - b.order);
 
-export default function Sidebar({ currentPage, onPageChange }: SidebarProps) {
+export default function Sidebar({
+    currentPage,
+    onPageChange,
+}: SidebarProps) {
     return (
         <aside className="w-60 flex-shrink-0 bg-white dark:bg-[#1a1b1d] border-r border-gray-200 dark:border-gray-800 flex flex-col">
             {/* Logo */}
@@ -25,25 +40,32 @@ export default function Sidebar({ currentPage, onPageChange }: SidebarProps) {
                     <IconPlugin size={18} />
                 </div>
                 <div>
-                    <h1 className="font-bold text-sm leading-tight text-gray-900 dark:text-white">{__PLUGIN_DISPLAY_NAME__}</h1>
-                    <p className="text-[10px] text-gray-400 font-medium tracking-wider">NAPCAT PLUGIN</p>
+                    <h1 className="font-bold text-sm leading-tight text-gray-900 dark:text-white">
+                        {__PLUGIN_DISPLAY_NAME__}
+                    </h1>
+                    <p className="text-[10px] text-gray-400 font-medium tracking-wider">
+                        NAPCAT PLUGIN
+                    </p>
                 </div>
             </div>
 
             {/* Nav */}
             <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto nav-stagger">
                 {menuItems.map((item) => {
-                    const Icon = PAGE_ICONS[item.icon]
+                    const Icon = PAGE_ICONS[item.icon];
                     return (
-                        <div
+                        <button
+                            type="button"
                             key={item.id}
                             className={`sidebar-item ${currentPage === item.id ? 'active' : ''}`}
                             onClick={() => onPageChange(item.id)}
                         >
-                            <span className="sidebar-icon"><Icon size={18} /></span>
+                            <span className="sidebar-icon">
+                                <Icon size={18} />
+                            </span>
                             <span>{item.title}</span>
-                        </div>
-                    )
+                        </button>
+                    );
                 })}
             </nav>
 
@@ -67,5 +89,5 @@ export default function Sidebar({ currentPage, onPageChange }: SidebarProps) {
                 </div>
             </div>
         </aside>
-    )
+    );
 }

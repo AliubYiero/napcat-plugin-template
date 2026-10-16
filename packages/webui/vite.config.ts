@@ -1,15 +1,18 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { viteSingleFile } from 'vite-plugin-singlefile'
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+import { viteSingleFile } from 'vite-plugin-singlefile';
 
 // 插件身份以 packages/plugin/package.json 为唯一权威, 构建期注入到前端
 const pluginPkg = JSON.parse(
-    readFileSync(resolve(__dirname, '../plugin/package.json'), 'utf-8'),
-) as { name: string; plugin?: string }
-const pluginId = pluginPkg.name
-const pluginDisplayName = pluginPkg.plugin || pluginId
+    readFileSync(
+        resolve(__dirname, '../plugin/package.json'),
+        'utf-8',
+    ),
+) as { name: string; plugin?: string };
+const pluginId = pluginPkg.name;
+const pluginDisplayName = pluginPkg.plugin || pluginId;
 
 export default defineConfig({
     plugins: [
@@ -18,7 +21,10 @@ export default defineConfig({
         {
             name: 'inject-plugin-meta',
             transformIndexHtml(html) {
-                return html.replace(/%PLUGIN_DISPLAY_NAME%/g, pluginDisplayName)
+                return html.replace(
+                    /%PLUGIN_DISPLAY_NAME%/g,
+                    pluginDisplayName,
+                );
             },
         },
     ],
@@ -47,4 +53,4 @@ export default defineConfig({
             '/plugin': 'http://localhost:6099',
         },
     },
-})
+});

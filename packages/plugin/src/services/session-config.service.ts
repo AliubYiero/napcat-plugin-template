@@ -8,8 +8,8 @@
  * 【必须】store 实例在方法内惰性获取, 不在模块加载期触碰 (此时 ctx / dataPath 尚不可用)。
  */
 
-import type { SessionType } from '../types';
 import { PluginSessionConfigStore } from '../store/plugin-session-config.store';
+import type { SessionType } from '../types';
 
 class SessionConfigService {
     private _store: PluginSessionConfigStore | null = null;
@@ -33,13 +33,23 @@ class SessionConfigService {
     }
 
     /** 设置某会话的启用状态 (upsert, 显式写入 enabled, 保留其它业务字段) */
-    setSessionEnabled(id: string, type: SessionType, enabled: boolean): void {
+    setSessionEnabled(
+        id: string,
+        type: SessionType,
+        enabled: boolean,
+    ): void {
         this.store.setMany([{ id, type, config: { enabled } }]);
     }
 
     /** 批量设置同一类型下多个会话的启用状态, 一次落盘 */
-    setSessionsEnabled(ids: string[], type: SessionType, enabled: boolean): void {
-        this.store.setMany(ids.map((id) => ({ id, type, config: { enabled } })));
+    setSessionsEnabled(
+        ids: string[],
+        type: SessionType,
+        enabled: boolean,
+    ): void {
+        this.store.setMany(
+            ids.map((id) => ({ id, type, config: { enabled } })),
+        );
     }
 }
 

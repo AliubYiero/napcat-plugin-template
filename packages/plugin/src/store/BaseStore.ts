@@ -83,7 +83,10 @@ export abstract class BaseStore<T> {
      * @param updater 接收旧项, 返回用于替换的新项 (不应原地修改旧项)
      * @returns 是否更新成功 (无匹配项时返回 false, 不抛错)
      */
-    updateItem(predicate: (item: T) => boolean, updater: (item: T) => T): boolean {
+    updateItem(
+        predicate: (item: T) => boolean,
+        updater: (item: T) => T,
+    ): boolean {
         const index = this.data.findIndex(predicate);
         if (index === -1) return false;
         this.data[index] = updater(this.data[index]);
@@ -120,10 +123,13 @@ export abstract class BaseStore<T> {
      * 损坏的数据文件不应让插件启动失败。
      */
     protected loadFromFile(): T[] {
-        const raw = pluginState.loadDataFile<unknown>(this.fileName, []);
+        const raw = pluginState.loadDataFile<unknown>(
+            this.fileName,
+            [],
+        );
         if (!Array.isArray(raw)) {
             pluginState.logger.warn(
-                `(；′⌒\`) 数据文件 ${this.fileName} 内容不是数组, 已按空数据加载`
+                `(；′⌒\`) 数据文件 ${this.fileName} 内容不是数组, 已按空数据加载`,
             );
             return [];
         }

@@ -6,23 +6,40 @@
  * 字段级清洗容错规则见 sanitize-config.test.ts。
  */
 
+import {
+    FIELDS,
+    getDefaultConfig,
+    parseStringList,
+    sanitizeConfig,
+} from 'shared';
 import { describe, expect, it } from 'vitest';
-import { FIELDS, getDefaultConfig, parseStringList, sanitizeConfig } from 'shared';
 
-const EXPECTED_KEYS = ['enabled', 'allowAtBotTrigger', 'commandPrefix', 'adminUsers'];
+const EXPECTED_KEYS = [
+    'enabled',
+    'allowAtBotTrigger',
+    'commandPrefix',
+    'adminUsers',
+];
 
 type ValueField = Extract<(typeof FIELDS)[number], { key: string }>;
 
 describe('FIELDS 声明源', () => {
     it('有值字段键集与 PluginConfig 一致', () => {
-        const keys = FIELDS
-            .filter((field): field is ValueField => 'key' in field)
-            .map((field) => field.key);
+        const keys = FIELDS.filter(
+            (field): field is ValueField => 'key' in field,
+        ).map((field) => field.key);
         expect([...keys].sort()).toEqual([...EXPECTED_KEYS].sort());
     });
 
     it('每个有值字段都声明了可渲染的 base kind 与默认值', () => {
-        const valueKinds = ['boolean', 'text', 'number', 'select', 'multiSelect', 'stringList'];
+        const valueKinds = [
+            'boolean',
+            'text',
+            'number',
+            'select',
+            'multiSelect',
+            'stringList',
+        ];
         for (const field of FIELDS) {
             if (!('key' in field)) continue;
             expect(valueKinds).toContain(field.kind);
@@ -48,7 +65,10 @@ describe('getDefaultConfig: 从 FIELDS 派生', () => {
 
 describe('parseStringList codec', () => {
     it('逗号分隔 → 去空白去空项', () => {
-        expect(parseStringList(' 10001 , 10002 ,, ')).toEqual(['10001', '10002']);
+        expect(parseStringList(' 10001 , 10002 ,, ')).toEqual([
+            '10001',
+            '10002',
+        ]);
         expect(parseStringList(',,,')).toEqual([]);
     });
 });
@@ -60,13 +80,24 @@ describe('sanitizeConfig: 从 kind 派生 (代表用例)', () => {
     });
 
     it('stringList: 逗号串/数组容错, 空数组合法, 类型不符回退默认', () => {
-        expect(sanitizeConfig({ adminUsers: '1, 2' }).adminUsers).toEqual(['1', '2']);
-        expect(sanitizeConfig({ adminUsers: [1, ' 2 '] }).adminUsers).toEqual(['1', '2']);
-        expect(sanitizeConfig({ adminUsers: [] }).adminUsers).toEqual([]);
-        expect(sanitizeConfig({ adminUsers: 123 }).adminUsers).toEqual([]);
+        expect(
+            sanitizeConfig({ adminUsers: '1, 2' }).adminUsers,
+        ).toEqual(['1', '2']);
+        expect(
+            sanitizeConfig({ adminUsers: [1, ' 2 '] }).adminUsers,
+        ).toEqual(['1', '2']);
+        expect(sanitizeConfig({ adminUsers: [] }).adminUsers).toEqual(
+            [],
+        );
+        expect(
+            sanitizeConfig({ adminUsers: 123 }).adminUsers,
+        ).toEqual([]);
     });
 
     it('boolean: 显式 false 是语义, 不回退默认', () => {
-        expect(sanitizeConfig({ allowAtBotTrigger: false }).allowAtBotTrigger).toBe(false);
+        expect(
+            sanitizeConfig({ allowAtBotTrigger: false })
+                .allowAtBotTrigger,
+        ).toBe(false);
     });
 });

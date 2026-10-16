@@ -5,7 +5,7 @@
  */
 
 export interface ValueFieldProps<TField, TValue> {
-    field: TField
-    value: TValue
-    onChange: (value: TValue) => void
+    field: TField;
+    value: TValue;
+    onChange: (value: TValue) => void;
 }

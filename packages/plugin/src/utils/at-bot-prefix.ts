@@ -16,7 +16,8 @@ const LEADING_AT_SEGMENT = /^\[CQ:at,([^\]]*)\]/i;
  * - 值可带双引号、单引号或无引号
  * - 允许额外属性 (如 `name=...`)
  */
-const QQ_ATTRIBUTE = /(?:^|,)\s*qq\s*=\s*(?:"([^"]*)"|'([^']*)'|([^,]*))/i;
+const QQ_ATTRIBUTE =
+    /(?:^|,)\s*qq\s*=\s*(?:"([^"]*)"|'([^']*)'|([^,]*))/i;
 
 /**
  * 剥离消息开头第一个匹配 selfId 的 at CQ 段
@@ -29,14 +30,22 @@ const QQ_ATTRIBUTE = /(?:^|,)\s*qq\s*=\s*(?:"([^"]*)"|'([^']*)'|([^,]*))/i;
  * @param selfId 机器人自身 QQ 号 (取自 PluginState.selfId, 不硬编码)
  * @returns 剥离后的字符串 (未剥离则为原串)
  */
-export function stripAtBotPrefix(rawMessage: string, selfId: string): string {
+export function stripAtBotPrefix(
+    rawMessage: string,
+    selfId: string,
+): string {
     if (!rawMessage || !selfId) return rawMessage;
 
     const segment = rawMessage.match(LEADING_AT_SEGMENT);
     if (!segment) return rawMessage;
 
     const matched = QQ_ATTRIBUTE.exec(segment[1]);
-    const qq = (matched?.[1] ?? matched?.[2] ?? matched?.[3] ?? '').trim();
+    const qq = (
+        matched?.[1] ??
+        matched?.[2] ??
+        matched?.[3] ??
+        ''
+    ).trim();
     if (qq !== String(selfId)) return rawMessage;
 
     return rawMessage.slice(segment[0].length);
@@ -56,7 +65,7 @@ export function stripAtBotPrefix(rawMessage: string, selfId: string): string {
 export function normalizeRawMessage(
     rawMessage: string,
     selfId: string,
-    allowAtBotTrigger: boolean
+    allowAtBotTrigger: boolean,
 ): string {
     if (!allowAtBotTrigger) return rawMessage;
     return stripAtBotPrefix(rawMessage.trim(), selfId).trimStart();

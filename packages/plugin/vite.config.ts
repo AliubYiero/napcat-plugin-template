@@ -1,11 +1,11 @@
-import { resolve, dirname } from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import fs from 'node:fs';
+import { builtinModules } from 'node:module';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import nodeResolve from '@rollup/plugin-node-resolve';
-import { builtinModules } from 'module';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-// @ts-ignore
+// @ts-expect-error
 import { napcatHmrPlugin } from 'napcat-plugin-debug-cli/vite';
+import { defineConfig, loadEnv } from 'vite';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '../..');
@@ -51,19 +51,28 @@ function copyAssetsPlugin() {
                 const distDir = resolve(__dirname, 'dist');
 
                 // 1. 复制 webui 构建产物（由根脚本 pnpm build 先行构建）
-                const webuiDist = resolve(repoRoot, 'packages/webui/dist');
+                const webuiDist = resolve(
+                    repoRoot,
+                    'packages/webui/dist',
+                );
                 const webuiDest = resolve(distDir, 'webui');
                 if (fs.existsSync(webuiDist)) {
                     copyDirRecursive(webuiDist, webuiDest);
-                    console.log('[copy-assets] (o\'v\'o) 已复制 webui 构建产物');
+                    console.log(
+                        "[copy-assets] (o'v'o) 已复制 webui 构建产物",
+                    );
                 } else {
-                    console.error('[copy-assets] (;_;) webui 构建产物不存在，请先运行 pnpm run build（根目录）');
+                    console.error(
+                        '[copy-assets] (;_;) webui 构建产物不存在，请先运行 pnpm run build（根目录）',
+                    );
                 }
 
                 // 2. 生成精简的 package.json（只保留运行时必要字段）
                 const pkgPath = resolve(__dirname, 'package.json');
                 if (fs.existsSync(pkgPath)) {
-                    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+                    const pkg = JSON.parse(
+                        fs.readFileSync(pkgPath, 'utf-8'),
+                    );
                     const distPkg: Record<string, unknown> = {
                         name: pkg.name,
                         plugin: pkg.plugin,
@@ -79,35 +88,50 @@ function copyAssetsPlugin() {
                     }
                     fs.writeFileSync(
                         resolve(distDir, 'package.json'),
-                        JSON.stringify(distPkg, null, 2)
+                        JSON.stringify(distPkg, null, 2),
                     );
-                    console.log('[copy-assets] (o\'v\'o) 已生成精简 package.json');
+                    console.log(
+                        "[copy-assets] (o'v'o) 已生成精简 package.json",
+                    );
                 }
 
                 // 3. 复制 templates 目录（如果存在）
                 const templatesSrc = resolve(__dirname, 'templates');
                 if (fs.existsSync(templatesSrc)) {
-                    copyDirRecursive(templatesSrc, resolve(distDir, 'templates'));
-                    console.log('[copy-assets] (o\'v\'o) 已复制 templates 目录');
+                    copyDirRecursive(
+                        templatesSrc,
+                        resolve(distDir, 'templates'),
+                    );
+                    console.log(
+                        "[copy-assets] (o'v'o) 已复制 templates 目录",
+                    );
                 }
 
                 // 4. 复制帮助图片资源（由 pnpm run help:generate 产出）
                 const assetsSrc = resolve(__dirname, 'src/assets');
                 if (fs.existsSync(assetsSrc)) {
-                    copyDirRecursive(assetsSrc, resolve(distDir, 'assets'));
-                    console.log('[copy-assets] (o\'v\'o) 已复制 assets 目录');
+                    copyDirRecursive(
+                        assetsSrc,
+                        resolve(distDir, 'assets'),
+                    );
+                    console.log(
+                        "[copy-assets] (o'v'o) 已复制 assets 目录",
+                    );
                 }
 
-                console.log('[copy-assets] (*\'v\'*) 资源复制完成！');
+                console.log("[copy-assets] (*'v'*) 资源复制完成！");
             } catch (error) {
-                console.error('[copy-assets] (;_;) 资源复制失败:', error);
+                console.error(
+                    '[copy-assets] (;_;) 资源复制失败:',
+                    error,
+                );
             }
         },
     };
 }
 
-export default defineConfig( ( { mode } ) => {
-    const env = loadEnv( mode, repoRoot, '' );
+export default defineConfig(({ mode }) => {
+    const env = loadEnv(mode, repoRoot, '');
 
     // 热部署插件只在 --mode deploy 下挂载:
     //   pnpm run build  → 纯构建, 不连调试服务 (无需 WS_URL / TOKEN)
@@ -115,25 +139,25 @@ export default defineConfig( ( { mode } ) => {
     const isDeploy = mode === 'deploy';
     console.log(
         isDeploy
-            ? '[vite] (o\'v\'o) 部署模式: 构建完成后自动复制到远程并热重载'
-            : '[vite] (*\'v\'*) 构建模式: 仅产出 dist/, 需要热部署请运行 pnpm run deploy'
+            ? "[vite] (o'v'o) 部署模式: 构建完成后自动复制到远程并热重载"
+            : "[vite] (*'v'*) 构建模式: 仅产出 dist/, 需要热部署请运行 pnpm run deploy",
     );
 
     return {
         resolve: {
-            conditions: [ 'node', 'default' ],
+            conditions: ['node', 'default'],
         },
         build: {
             sourcemap: false,
             target: 'esnext',
             minify: false,
             lib: {
-                entry: resolve( __dirname, 'src/index.ts' ),
-                formats: [ 'es' ],
+                entry: resolve(__dirname, 'src/index.ts'),
+                formats: ['es'],
                 fileName: () => 'index.mjs',
             },
             rollupOptions: {
-                external: [ ...nodeModules, ...external ],
+                external: [...nodeModules, ...external],
                 output: {
                     inlineDynamicImports: true,
                 },
@@ -143,16 +167,18 @@ export default defineConfig( ( { mode } ) => {
         plugins: [
             nodeResolve(),
             copyAssetsPlugin(),
-            ...( isDeploy
-                ? [ napcatHmrPlugin( {
-                    webui: {
-                        distDir: '../../packages/webui/dist',
-                        targetDir: 'webui',
-                    },
-                    wsUrl: env.WS_URL,
-                    token: env.TOKEN,
-                } ) ]
-                : [] ),
+            ...(isDeploy
+                ? [
+                      napcatHmrPlugin({
+                          webui: {
+                              distDir: '../../packages/webui/dist',
+                              targetDir: 'webui',
+                          },
+                          wsUrl: env.WS_URL,
+                          token: env.TOKEN,
+                      }),
+                  ]
+                : []),
         ],
     };
-} );
+});

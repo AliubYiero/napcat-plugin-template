@@ -16,7 +16,9 @@ import { BaseStore } from './BaseStore';
 
 export type { SessionConfigBase, SessionType };
 
-export abstract class SessionConfigStore<T extends SessionConfigBase> extends BaseStore<T> {
+export abstract class SessionConfigStore<
+    T extends SessionConfigBase,
+> extends BaseStore<T> {
     protected constructor(dataFilename: string) {
         super(dataFilename);
     }
@@ -27,7 +29,9 @@ export abstract class SessionConfigStore<T extends SessionConfigBase> extends Ba
      * 查找某会话的配置 (返回内部引用, 不要直接改动返回值, 改用 set / update)
      */
     find(id: string, type: SessionType): T | undefined {
-        return this.findItem((item) => item.id === id && item.type === type);
+        return this.findItem(
+            (item) => item.id === id && item.type === type,
+        );
     }
 
     /**
@@ -37,13 +41,17 @@ export abstract class SessionConfigStore<T extends SessionConfigBase> extends Ba
      * 需要保留旧值时用 update。
      * @throws 校验失败时抛 Error (id 为空 / type 非法)
      */
-    set(id: string, type: SessionType, config: Omit<T, 'id' | 'type'>): void {
+    set(
+        id: string,
+        type: SessionType,
+        config: Omit<T, 'id' | 'type'>,
+    ): void {
         this.assertValidKey(id, type);
 
         const newItem = { id, type, ...config } as T;
         const updated = this.updateItem(
             (item) => item.id === id && item.type === type,
-            () => newItem
+            () => newItem,
         );
         if (!updated) this.addItem(newItem);
     }
@@ -55,19 +63,37 @@ export abstract class SessionConfigStore<T extends SessionConfigBase> extends Ba
      * 字段。批量开关等场景下, 命中从未配置过的会话时新增, 命中已存在会话时更新。
      * @throws 任一 entry 校验失败时抛 Error (id 为空 / type 非法)
      */
-    setMany(entries: Array<{ id: string; type: SessionType; config: Partial<Omit<T, 'id' | 'type'>> }>): void {
-        for (const entry of entries) this.assertValidKey(entry.id, entry.type);
+    setMany(
+        entries: Array<{
+            id: string;
+            type: SessionType;
+            config: Partial<Omit<T, 'id' | 'type'>>;
+        }>,
+    ): void {
+        for (const entry of entries)
+            this.assertValidKey(entry.id, entry.type);
 
         this.mutate((items) => {
             const next = [...items];
             for (const entry of entries) {
                 const index = next.findIndex(
-                    (item) => item.id === entry.id && item.type === entry.type
+                    (item) =>
+                        item.id === entry.id &&
+                        item.type === entry.type,
                 );
                 if (index === -1) {
-                    next.push({ id: entry.id, type: entry.type, ...entry.config } as T);
+                    next.push({
+                        id: entry.id,
+                        type: entry.type,
+                        ...entry.config,
+                    } as T);
                 } else {
-                    next[index] = { ...next[index], ...entry.config, id: entry.id, type: entry.type } as T;
+                    next[index] = {
+                        ...next[index],
+                        ...entry.config,
+                        id: entry.id,
+                        type: entry.type,
+                    } as T;
                 }
             }
             return next;
@@ -78,12 +104,16 @@ export abstract class SessionConfigStore<T extends SessionConfigBase> extends Ba
      * 部分更新某会话的配置 (保留未提及的字段)
      * @throws 校验失败或记录不存在时抛 Error
      */
-    update(id: string, type: SessionType, partial: Partial<Omit<T, 'id' | 'type'>>): void {
+    update(
+        id: string,
+        type: SessionType,
+        partial: Partial<Omit<T, 'id' | 'type'>>,
+    ): void {
         this.assertValidKey(id, type);
 
         const updated = this.updateItem(
             (item) => item.id === id && item.type === type,
-            (old) => ({ ...old, ...partial, id, type })
+            (old) => ({ ...old, ...partial, id, type }),
         );
         if (!updated) {
             throw new Error(`未找到会话配置: id=${id} type=${type}`);
@@ -102,14 +132,18 @@ export abstract class SessionConfigStore<T extends SessionConfigBase> extends Ba
      * @returns 是否删除成功 (记录不存在时返回 false, 不抛错)
      */
     remove(id: string, type: SessionType): boolean {
-        return this.removeItem((item) => item.id === id && item.type === type);
+        return this.removeItem(
+            (item) => item.id === id && item.type === type,
+        );
     }
 
     /**
      * 某会话是否已有配置
      */
     has(id: string, type: SessionType): boolean {
-        return this.hasItem((item) => item.id === id && item.type === type);
+        return this.hasItem(
+            (item) => item.id === id && item.type === type,
+        );
     }
 
     // ==================== 内部 ====================
@@ -120,7 +154,9 @@ export abstract class SessionConfigStore<T extends SessionConfigBase> extends Ba
     private assertValidKey(id: string, type: SessionType): void {
         if (!id) throw new Error('会话 id 不能为空');
         if (type !== 'private' && type !== 'group') {
-            throw new Error(`会话 type 必须是 private 或 group, 收到: ${String(type)}`);
+            throw new Error(
+                `会话 type 必须是 private 或 group, 收到: ${String(type)}`,
+            );
         }
     }
 }

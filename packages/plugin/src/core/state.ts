@@ -10,11 +10,14 @@
  *   pluginState.ctx.logger.info(...); // 使用日志
  */
 
-import fs from 'fs';
-import path from 'path';
-import type { NapCatPluginContext, PluginLogger } from 'napcat-types/napcat-onebot/network/plugin/types';
-import { DEFAULT_CONFIG } from '../config';
+import fs from 'node:fs';
+import path from 'node:path';
+import type {
+    NapCatPluginContext,
+    PluginLogger,
+} from 'napcat-types/napcat-onebot/network/plugin/types';
 import { sanitizeConfig } from 'shared';
+import { DEFAULT_CONFIG } from '../config';
 import type { PluginConfig } from '../types';
 
 // ==================== 配置清洗工具 ====================
@@ -58,7 +61,10 @@ class PluginState {
 
     /** 获取上下文（确保已初始化） */
     get ctx(): NapCatPluginContext {
-        if (!this._ctx) throw new Error('PluginState 尚未初始化，请先调用 init()');
+        if (!this._ctx)
+            throw new Error(
+                'PluginState 尚未初始化，请先调用 init()',
+            );
         return this._ctx;
     }
 
@@ -85,15 +91,20 @@ class PluginState {
      */
     private async fetchSelfId(): Promise<void> {
         try {
-            const res = await this.ctx.actions.call(
-                'get_login_info', {}, this.ctx.adapterName, this.ctx.pluginManager.config
-            ) as { user_id?: number | string };
+            const res = (await this.ctx.actions.call(
+                'get_login_info',
+                {},
+                this.ctx.adapterName,
+                this.ctx.pluginManager.config,
+            )) as { user_id?: number | string };
             if (res?.user_id) {
                 this.selfId = String(res.user_id);
-                this.logger.debug("(｡·ω·｡) 机器人 QQ: " + this.selfId);
+                this.logger.debug(
+                    `(｡·ω·｡) 机器人 QQ: ${this.selfId}`,
+                );
             }
         } catch (e) {
-            this.logger.warn("(；′⌒`) 获取机器人 QQ 号失败:", e);
+            this.logger.warn('(；′⌒`) 获取机器人 QQ 号失败:', e);
         }
     }
 
@@ -141,7 +152,10 @@ class PluginState {
                 return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
             }
         } catch (e) {
-            this.logger.warn("(；′⌒`) 读取数据文件 " + filename + " 失败:", e);
+            this.logger.warn(
+                `(；′⌒\`) 读取数据文件 ${filename} 失败:`,
+                e,
+            );
         }
         return defaultValue;
     }
@@ -152,12 +166,23 @@ class PluginState {
      * @param data 要保存的数据
      * @param space 保存文件的空白符
      */
-    saveDataFile<T>( filename: string, data: T, space: number = 0): void {
+    saveDataFile<T>(
+        filename: string,
+        data: T,
+        space: number = 0,
+    ): void {
         const filePath = this.getDataFilePath(filename);
         try {
-            fs.writeFileSync(filePath, JSON.stringify(data, null, space), 'utf-8');
+            fs.writeFileSync(
+                filePath,
+                JSON.stringify(data, null, space),
+                'utf-8',
+            );
         } catch (e) {
-            this.logger.error("(╥﹏╥) 保存数据文件 " + filename + " 失败:", e);
+            this.logger.error(
+                `(╥﹏╥) 保存数据文件 ${filename} 失败:`,
+                e,
+            );
         }
     }
 
@@ -170,7 +195,9 @@ class PluginState {
         const configPath = this.ctx.configPath;
         try {
             if (configPath && fs.existsSync(configPath)) {
-                const raw = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+                const raw = JSON.parse(
+                    fs.readFileSync(configPath, 'utf-8'),
+                );
                 this.config = sanitizeConfig(raw);
                 // 加载统计信息
                 if (isObject(raw) && isObject(raw.stats)) {
@@ -180,10 +207,15 @@ class PluginState {
             } else {
                 this.config = { ...DEFAULT_CONFIG };
                 this.saveConfig();
-                this.ctx.logger.debug('配置文件不存在，已创建默认配置');
+                this.ctx.logger.debug(
+                    '配置文件不存在，已创建默认配置',
+                );
             }
         } catch (error) {
-            this.ctx.logger.error('加载配置失败，使用默认配置:', error);
+            this.ctx.logger.error(
+                '加载配置失败，使用默认配置:',
+                error,
+            );
             this.config = { ...DEFAULT_CONFIG };
         }
     }
@@ -200,7 +232,11 @@ class PluginState {
                 fs.mkdirSync(configDir, { recursive: true });
             }
             const data = { ...this.config, stats: this.stats };
-            fs.writeFileSync(configPath, JSON.stringify(data, null, 2), 'utf-8');
+            fs.writeFileSync(
+                configPath,
+                JSON.stringify(data, null, 2),
+                'utf-8',
+            );
         } catch (error) {
             this._ctx.logger.error('保存配置失败:', error);
         }

@@ -16,14 +16,10 @@
  * 一般插件自带的 WebUI 页面使用 NoAuth 路由，因为页面本身已在 NapCat WebUI 内嵌展示。
  */
 
-import type {
-    NapCatPluginContext,
-    PluginHttpRequest,
-    PluginHttpResponse
-} from 'napcat-types/napcat-onebot/network/plugin/types';
+import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plugin/types';
 import { pluginState } from '../core/state';
-import { sessionConfigService } from './session-config.service';
 import type { PluginConfig, SessionType } from '../types';
+import { sessionConfigService } from './session-config.service';
 
 /** 会话类型守卫: 收窄外部输入, 供路由复用 */
 function isSessionType(value: unknown): value is SessionType {
@@ -62,12 +58,19 @@ export function registerApiRoutes(ctx: NapCatPluginContext): void {
     /** 保存配置 */
     router.postNoAuth('/config', async (req, res) => {
         try {
-            const body = req.body as Record<string, unknown> | undefined;
+            const body = req.body as
+                | Record<string, unknown>
+                | undefined;
             if (!body) {
-                return res.status(400).json({ code: -1, message: '请求体为空' });
+                return res
+                    .status(400)
+                    .json({ code: -1, message: '请求体为空' });
             }
             // 【必须】WebUI 提交属于外部输入, 走 replaceConfig 统一清洗后再落盘
-            pluginState.replaceConfig({ ...pluginState.config, ...body } as PluginConfig);
+            pluginState.replaceConfig({
+                ...pluginState.config,
+                ...body,
+            } as PluginConfig);
             ctx.logger.info('配置已保存');
             res.json({ code: 0, message: 'ok' });
         } catch (err) {
@@ -86,14 +89,27 @@ export function registerApiRoutes(ctx: NapCatPluginContext): void {
                     'get_group_list',
                     {},
                     ctx.adapterName,
-                    ctx.pluginManager.config
-                ) as Promise<Array<{ group_id: number; group_name: string; member_count: number; max_member_count: number }>>,
+                    ctx.pluginManager.config,
+                ) as Promise<
+                    Array<{
+                        group_id: number;
+                        group_name: string;
+                        member_count: number;
+                        max_member_count: number;
+                    }>
+                >,
                 ctx.actions.call(
                     'get_friend_list',
                     {},
                     ctx.adapterName,
-                    ctx.pluginManager.config
-                ) as Promise<Array<{ user_id: number; nickname: string; remark?: string }>>,
+                    ctx.pluginManager.config,
+                ) as Promise<
+                    Array<{
+                        user_id: number;
+                        nickname: string;
+                        remark?: string;
+                    }>
+                >,
             ]);
 
             const groupSessions = (groups || []).map((group) => {
@@ -102,7 +118,10 @@ export function registerApiRoutes(ctx: NapCatPluginContext): void {
                     id,
                     type: 'group' as const,
                     name: group.group_name,
-                    enabled: sessionConfigService.isSessionEnabled(id, 'group'),
+                    enabled: sessionConfigService.isSessionEnabled(
+                        id,
+                        'group',
+                    ),
                     memberCount: group.member_count,
                     maxMemberCount: group.max_member_count,
                 };
@@ -114,11 +133,17 @@ export function registerApiRoutes(ctx: NapCatPluginContext): void {
                     id,
                     type: 'private' as const,
                     name: friend.remark || friend.nickname,
-                    enabled: sessionConfigService.isSessionEnabled(id, 'private'),
+                    enabled: sessionConfigService.isSessionEnabled(
+                        id,
+                        'private',
+                    ),
                 };
             });
 
-            res.json({ code: 0, data: [...groupSessions, ...friendSessions] });
+            res.json({
+                code: 0,
+                data: [...groupSessions, ...friendSessions],
+            });
         } catch (e) {
             ctx.logger.error('获取会话列表失败:', e);
             res.status(500).json({ code: -1, message: String(e) });
@@ -126,44 +151,75 @@ export function registerApiRoutes(ctx: NapCatPluginContext): void {
     });
 
     /** 更新单个会话配置 */
-    router.postNoAuth('/sessions/:type/:id/config', async (req, res) => {
-        try {
-            const type = req.params?.type;
-            const id = req.params?.id;
-            if (!isSessionType(type)) {
-                return res.status(400).json({ code: -1, message: '非法的会话类型' });
-            }
-            if (!id) {
-                return res.status(400).json({ code: -1, message: '缺少会话 ID' });
-            }
+    router.postNoAuth(
+        '/sessions/:type/:id/config',
+        async (req, res) => {
+            try {
+                const type = req.params?.type;
+                const id = req.params?.id;
+                if (!isSessionType(type)) {
+                    return res.status(400).json({
+                        code: -1,
+                        message: '非法的会话类型',
+                    });
+                }
+                if (!id) {
+                    return res
+                        .status(400)
+                        .json({ code: -1, message: '缺少会话 ID' });
+                }
 
-            const body = req.body as Record<string, unknown> | undefined;
-            const enabled = Boolean(body?.enabled);
-            sessionConfigService.setSessionEnabled(id, type, enabled);
-            ctx.logger.info(`会话 ${type}:${id} 配置已更新: enabled=${enabled}`);
-            res.json({ code: 0, message: 'ok' });
-        } catch (err) {
-            ctx.logger.error('更新会话配置失败:', err);
-            res.status(500).json({ code: -1, message: String(err) });
-        }
-    });
+                const body = req.body as
+                    | Record<string, unknown>
+                    | undefined;
+                const enabled = Boolean(body?.enabled);
+                sessionConfigService.setSessionEnabled(
+                    id,
+                    type,
+                    enabled,
+                );
+                ctx.logger.info(
+                    `会话 ${type}:${id} 配置已更新: enabled=${enabled}`,
+                );
+                res.json({ code: 0, message: 'ok' });
+            } catch (err) {
+                ctx.logger.error('更新会话配置失败:', err);
+                res.status(500).json({
+                    code: -1,
+                    message: String(err),
+                });
+            }
+        },
+    );
 
     /** 批量更新会话配置 */
     router.postNoAuth('/sessions/bulk-config', async (req, res) => {
         try {
-            const body = req.body as Record<string, unknown> | undefined;
+            const body = req.body as
+                | Record<string, unknown>
+                | undefined;
             const { type, enabled, ids } = body || {};
 
             if (!isSessionType(type)) {
-                return res.status(400).json({ code: -1, message: '非法的会话类型' });
+                return res
+                    .status(400)
+                    .json({ code: -1, message: '非法的会话类型' });
             }
             if (typeof enabled !== 'boolean' || !Array.isArray(ids)) {
-                return res.status(400).json({ code: -1, message: '参数错误' });
+                return res
+                    .status(400)
+                    .json({ code: -1, message: '参数错误' });
             }
 
-            sessionConfigService.setSessionsEnabled(ids.map(String), type, enabled);
+            sessionConfigService.setSessionsEnabled(
+                ids.map(String),
+                type,
+                enabled,
+            );
 
-            ctx.logger.info(`批量更新会话配置完成 | type=${type}, 数量: ${ids.length}, enabled=${enabled}`);
+            ctx.logger.info(
+                `批量更新会话配置完成 | type=${type}, 数量: ${ids.length}, enabled=${enabled}`,
+            );
             res.json({ code: 0, message: 'ok' });
         } catch (err) {
             ctx.logger.error('批量更新会话配置失败:', err);

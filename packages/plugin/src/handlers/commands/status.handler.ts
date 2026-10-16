@@ -18,7 +18,12 @@ const ROLE_LABEL: Record<UserRoleName, string> = {
     superAdmin: '超级管理员',
 };
 
-export const statusHandler: InstructionHandler = async (ctx, event, commands, userRole) => {
+export const statusHandler: InstructionHandler = async (
+    ctx,
+    event,
+    _commands,
+    userRole,
+) => {
     const lines = [
         '[= 插件状态 =]',
         `运行时长: ${pluginState.getUptimeFormatted()}`,

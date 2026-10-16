@@ -31,7 +31,7 @@ export type InstructionHandler = (
     ctx: NapCatPluginContext,
     event: OB11Message,
     commands: string[],
-    userRole: UserRole
+    userRole: UserRole,
 ) => void | Promise<void>;
 
 /** 形态化作用域规则: 同一指令按参数个数绑定不同权限/作用域 */
@@ -78,10 +78,16 @@ export interface InstructionDefinition {
  * },
  * ```
  */
-export const instructionSetMapper: Record<string, Record<string, InstructionDefinition>> = {};
+export const instructionSetMapper: Record<
+    string,
+    Record<string, InstructionDefinition>
+> = {};
 
 /** 一级命名空间: 指令名 → 定义 (无模块前缀的直达指令) */
-export const rootInstructionSetMapper: Record<string, InstructionDefinition> = {
+export const rootInstructionSetMapper: Record<
+    string,
+    InstructionDefinition
+> = {
     help: { handler: helpHandler },
     ping: { handler: pingHandler },
     status: { handler: statusHandler },

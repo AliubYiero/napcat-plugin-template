@@ -23,7 +23,11 @@ import { pluginState } from './state';
  * 【应该】按机器人形态可裁剪档位 (纯群聊机器人可去掉 privateUser 等),
  * 裁剪时本联合类型与 ROLE_LEVEL 等级表同步收窄, 让遗漏的档位在编译期暴露。
  */
-export type UserRoleName = 'user' | 'admin' | 'privateUser' | 'superAdmin';
+export type UserRoleName =
+    | 'user'
+    | 'admin'
+    | 'privateUser'
+    | 'superAdmin';
 
 /** 角色等级表: 与 UserRoleName 同处一模块, 新增档位时两处同步修改 */
 export const ROLE_LEVEL: Record<UserRoleName, number> = {
@@ -91,15 +95,18 @@ export function isAdmin(event: OB11Message): boolean {
  */
 export async function isBotAdmin(
     ctx: NapCatPluginContext,
-    groupId: string | number
+    groupId: string | number,
 ): Promise<boolean> {
     if (!pluginState.selfId) return false;
     try {
         const member = (await ctx.actions.call(
             'get_group_member_info',
-            { group_id: String(groupId), user_id: pluginState.selfId },
+            {
+                group_id: String(groupId),
+                user_id: pluginState.selfId,
+            },
             ctx.adapterName,
-            ctx.pluginManager.config
+            ctx.pluginManager.config,
         )) as { role?: string };
         return isGroupAdminRole(member?.role);
     } catch (error) {
@@ -137,7 +144,9 @@ export function getUserRole(event: OB11Message): UserRole {
         userId,
         role,
         from: {
-            id: isGroup ? String(event.group_id) : String(event.user_id),
+            id: isGroup
+                ? String(event.group_id)
+                : String(event.user_id),
             type: isGroup ? 'group' : 'private',
         },
     };
@@ -149,6 +158,9 @@ export function getUserRole(event: OB11Message): UserRole {
  * 【必须】接收 UserRole 对象而非裸字符串, 避免调用方在传递过程中丢失来源会话信息。
  * 【应该】只做比较, 不负责拒绝与反馈; 拒绝路径 (静默还是提示) 属于分发层策略。
  */
-export function hasRole(userRole: UserRole, required: UserRoleName): boolean {
+export function hasRole(
+    userRole: UserRole,
+    required: UserRoleName,
+): boolean {
     return ROLE_LEVEL[userRole.role] >= ROLE_LEVEL[required];
 }

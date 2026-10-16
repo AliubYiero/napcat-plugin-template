@@ -7,8 +7,8 @@
  * 会话级配置 (群/好友) 已迁出配置文件, 由 store 承载, 不在本测试范围。
  */
 
-import { describe, expect, it } from 'vitest';
 import { sanitizeConfig } from 'shared';
+import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from '../src/config';
 
 describe('sanitizeConfig: 输入整体非法', () => {
@@ -19,50 +19,74 @@ describe('sanitizeConfig: 输入整体非法', () => {
     });
 
     it('清洗不抛错, 损坏配置下仍能启动', () => {
-        expect(() => sanitizeConfig({ enabled: null, adminUsers: { foo: 1 }, commandPrefix: [] })).not.toThrow();
+        expect(() =>
+            sanitizeConfig({
+                enabled: null,
+                adminUsers: { foo: 1 },
+                commandPrefix: [],
+            }),
+        ).not.toThrow();
     });
 });
 
 describe('sanitizeConfig: 标量', () => {
     it('类型不符时保留默认值', () => {
-        const out = sanitizeConfig({ enabled: 'yes', commandPrefix: 123, allowAtBotTrigger: 'no' });
+        const out = sanitizeConfig({
+            enabled: 'yes',
+            commandPrefix: 123,
+            allowAtBotTrigger: 'no',
+        });
         expect(out.enabled).toBe(DEFAULT_CONFIG.enabled);
         expect(out.commandPrefix).toBe(DEFAULT_CONFIG.commandPrefix);
-        expect(out.allowAtBotTrigger).toBe(DEFAULT_CONFIG.allowAtBotTrigger);
+        expect(out.allowAtBotTrigger).toBe(
+            DEFAULT_CONFIG.allowAtBotTrigger,
+        );
     });
 
     it('类型正确时采纳外部值', () => {
-        const out = sanitizeConfig({ enabled: false, commandPrefix: '#bot' });
+        const out = sanitizeConfig({
+            enabled: false,
+            commandPrefix: '#bot',
+        });
         expect(out.enabled).toBe(false);
         expect(out.commandPrefix).toBe('#bot');
     });
 
     it('显式 false 是语义, 不回退默认', () => {
-        expect(sanitizeConfig({ allowAtBotTrigger: false }).allowAtBotTrigger).toBe(false);
+        expect(
+            sanitizeConfig({ allowAtBotTrigger: false })
+                .allowAtBotTrigger,
+        ).toBe(false);
     });
 });
 
 describe('sanitizeConfig: 字符串列表 (超管名单)', () => {
     it('逗号分隔串 → 去空白去空项的数组', () => {
-        expect(sanitizeConfig({ adminUsers: ' 10001 , 10002 ,, ' }).adminUsers).toEqual([
-            '10001',
-            '10002',
-        ]);
+        expect(
+            sanitizeConfig({ adminUsers: ' 10001 , 10002 ,, ' })
+                .adminUsers,
+        ).toEqual(['10001', '10002']);
     });
 
     it('数组输入同样容错 (元素转字符串并 trim)', () => {
-        expect(sanitizeConfig({ adminUsers: [10001, ' 10002 ', ''] }).adminUsers).toEqual([
-            '10001',
-            '10002',
-        ]);
+        expect(
+            sanitizeConfig({ adminUsers: [10001, ' 10002 ', ''] })
+                .adminUsers,
+        ).toEqual(['10001', '10002']);
     });
 
     it('空数组是合法语义, 不回退默认', () => {
-        expect(sanitizeConfig({ adminUsers: [] }).adminUsers).toEqual([]);
-        expect(sanitizeConfig({ adminUsers: ',,,' }).adminUsers).toEqual([]);
+        expect(sanitizeConfig({ adminUsers: [] }).adminUsers).toEqual(
+            [],
+        );
+        expect(
+            sanitizeConfig({ adminUsers: ',,,' }).adminUsers,
+        ).toEqual([]);
     });
 
     it('类型不符时保留默认值', () => {
-        expect(sanitizeConfig({ adminUsers: 123 }).adminUsers).toEqual(DEFAULT_CONFIG.adminUsers);
+        expect(
+            sanitizeConfig({ adminUsers: 123 }).adminUsers,
+        ).toEqual(DEFAULT_CONFIG.adminUsers);
     });
 });

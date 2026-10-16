@@ -20,7 +20,8 @@ export class PluginSessionConfigStore extends SessionConfigStore<SessionConfig> 
 
     static getInstance(): PluginSessionConfigStore {
         if (!PluginSessionConfigStore.instance) {
-            PluginSessionConfigStore.instance = new PluginSessionConfigStore();
+            PluginSessionConfigStore.instance =
+                new PluginSessionConfigStore();
         }
         return PluginSessionConfigStore.instance;
     }

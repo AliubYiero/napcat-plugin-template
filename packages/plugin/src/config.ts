@@ -7,10 +7,13 @@
  *   - 本文件只负责把 `FIELDS` 映射成 NapCat 原生面板 Schema (需要 ctx)
  */
 
-import type { NapCatPluginContext, PluginConfigSchema } from 'napcat-types/napcat-onebot/network/plugin/types';
+import type {
+    NapCatPluginContext,
+    PluginConfigSchema,
+} from 'napcat-types/napcat-onebot/network/plugin/types';
+import type { ConfigField } from 'shared';
 import { FIELDS, getDefaultConfig } from 'shared';
 import type { PluginConfig } from './types';
-import type { ConfigField } from 'shared';
 
 /**
  * 默认配置 (从 FIELDS 派生)
@@ -34,7 +37,9 @@ export const DEFAULT_CONFIG: PluginConfig = getDefaultConfig();
  *   - html(content) / plainText(content)                        → 纯展示, 不保存值
  *   - combine(...items)                                         → 合并为 Schema
  */
-export function buildConfigSchema(ctx: NapCatPluginContext): PluginConfigSchema {
+export function buildConfigSchema(
+    ctx: NapCatPluginContext,
+): PluginConfigSchema {
     const items = FIELDS.map((field) => toNapCatItem(ctx, field));
     return ctx.NapCatConfig.combine(...items);
 }
@@ -48,22 +53,50 @@ function toNapCatItem(
     const { NapCatConfig } = ctx;
     switch (field.kind) {
         case 'boolean':
-            return NapCatConfig.boolean(field.key, field.label, field.default, field.description);
+            return NapCatConfig.boolean(
+                field.key,
+                field.label,
+                field.default,
+                field.description,
+            );
         case 'text':
-            return NapCatConfig.text(field.key, field.label, field.default, field.description);
+            return NapCatConfig.text(
+                field.key,
+                field.label,
+                field.default,
+                field.description,
+            );
         case 'number':
-            return NapCatConfig.number(field.key, field.label, field.default, field.description);
+            return NapCatConfig.number(
+                field.key,
+                field.label,
+                field.default,
+                field.description,
+            );
         case 'select':
             return NapCatConfig.select(
-                field.key, field.label, [...field.options], field.default, field.description,
+                field.key,
+                field.label,
+                [...field.options],
+                field.default,
+                field.description,
             );
         case 'multiSelect':
             return NapCatConfig.multiSelect(
-                field.key, field.label, [...field.options], [...field.default], field.description,
+                field.key,
+                field.label,
+                [...field.options],
+                [...field.default],
+                field.description,
             );
         case 'stringList':
             // 原生面板无列表控件: 降级为逗号分隔文本, 由清洗层转回数组
-            return NapCatConfig.text(field.key, field.label, field.default.join(','), field.description);
+            return NapCatConfig.text(
+                field.key,
+                field.label,
+                field.default.join(','),
+                field.description,
+            );
         case 'section':
             // 仅布局: 分组标题
             return NapCatConfig.plainText(field.label);

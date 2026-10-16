@@ -15,10 +15,9 @@
     "files": {
         "includes": [
             "**",
-            "!src/webui/**",
-            "!.githooks/**",
+            "!.githooks",
             "!**/*.generated.ts",
-            "!packages/plugin/types/**"
+            "!packages/plugin/types"
         ]
     },
     "formatter": {
@@ -35,13 +34,34 @@
     },
     "css": {
         "parser": {
-            "cssModules": true
+            "cssModules": true,
+            "tailwindDirectives": true
         }
     },
     "linter": {
         "enabled": true,
         "rules": {
-            "recommended": true
+            "preset": "recommended",
+            "suspicious": {
+                "noUnknownAtRules": {
+                    "level": "error",
+                    "options": {
+                        "ignore": ["tailwind"]
+                    }
+                }
+            }
         }
-    }
+    },
+    "overrides": [
+        {
+            "includes": ["packages/webui/src/index.css"],
+            "linter": {
+                "rules": {
+                    "complexity": {
+                        "noImportantStyles": "off"
+                    }
+                }
+            }
+        }
+    ]
 }

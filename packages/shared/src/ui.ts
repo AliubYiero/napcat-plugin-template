@@ -60,7 +60,8 @@ export type PageId = (typeof PAGES)[number]['id'];
  * 遍历用视图: 保留 PageId 字面量类型, 同时补上 PageMeta 的可选属性
  * (as const 字面量类型不含未显式声明的可选属性, 直接遍历会丢 hidden)。
  */
-export const PAGE_LIST: readonly (PageMeta & { id: PageId })[] = PAGES;
+export const PAGE_LIST: readonly (PageMeta & { id: PageId })[] =
+    PAGES;
 
 /** 默认页 */
 export const DEFAULT_PAGE: PageId = 'status';

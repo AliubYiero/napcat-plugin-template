@@ -1,49 +1,71 @@
-import { useState, useEffect } from 'react'
-import { PAGES, DEFAULT_PAGE, type PageId } from 'shared'
-import Sidebar from './components/Sidebar'
-import Header from './components/Header'
-import ToastContainer from './components/ToastContainer'
-import StatusPage from './pages/StatusPage'
-import ConfigPage from './pages/ConfigPage'
-import SessionsPage from './pages/SessionsPage'
-import { useStatus } from './hooks/useStatus'
-import { useTheme } from './hooks/useTheme'
+import { useEffect, useState } from 'react';
+import { DEFAULT_PAGE, PAGES, type PageId } from 'shared';
+import Header from './components/Header';
+import Sidebar from './components/Sidebar';
+import ToastContainer from './components/ToastContainer';
+import { useStatus } from './hooks/useStatus';
+import { useTheme } from './hooks/useTheme';
+import ConfigPage from './pages/ConfigPage';
+import SessionsPage from './pages/SessionsPage';
+import StatusPage from './pages/StatusPage';
 
 function App() {
-    const [currentPage, setCurrentPage] = useState<PageId>(DEFAULT_PAGE)
-    const [isScrolled, setIsScrolled] = useState(false)
-    const { status, fetchStatus } = useStatus()
+    const [currentPage, setCurrentPage] =
+        useState<PageId>(DEFAULT_PAGE);
+    const [isScrolled, setIsScrolled] = useState(false);
+    const { status, fetchStatus } = useStatus();
 
-    useTheme()
+    useTheme();
 
     useEffect(() => {
-        fetchStatus()
-        const interval = setInterval(fetchStatus, 5000)
-        return () => clearInterval(interval)
-    }, [fetchStatus])
+        fetchStatus();
+        const interval = setInterval(fetchStatus, 5000);
+        return () => clearInterval(interval);
+    }, [fetchStatus]);
 
     const handleScroll = (e: React.UIEvent<HTMLElement>) => {
-        setIsScrolled(e.currentTarget.scrollTop > 10)
-    }
+        setIsScrolled(e.currentTarget.scrollTop > 10);
+    };
 
     const renderPage = () => {
         switch (currentPage) {
-            case 'status': return <StatusPage status={status} onRefresh={fetchStatus} />
-            case 'config': return <ConfigPage />
-            case 'sessions': return <SessionsPage />
-            default: return <StatusPage status={status} onRefresh={fetchStatus} />
+            case 'status':
+                return (
+                    <StatusPage
+                        status={status}
+                        onRefresh={fetchStatus}
+                    />
+                );
+            case 'config':
+                return <ConfigPage />;
+            case 'sessions':
+                return <SessionsPage />;
+            default:
+                return (
+                    <StatusPage
+                        status={status}
+                        onRefresh={fetchStatus}
+                    />
+                );
         }
-    }
+    };
 
-    const currentMeta = PAGES.find((page) => page.id === currentPage) ?? PAGES[0]
+    const currentMeta =
+        PAGES.find((page) => page.id === currentPage) ?? PAGES[0];
 
     return (
         <div className="flex h-screen overflow-hidden bg-[#f8f9fa] dark:bg-[#18191C] text-gray-800 dark:text-gray-200 transition-colors duration-300">
             <ToastContainer />
-            <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+            <Sidebar
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+            />
 
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-y-auto" onScroll={handleScroll}>
+                <main
+                    className="flex-1 overflow-y-auto"
+                    onScroll={handleScroll}
+                >
                     <Header
                         title={currentMeta.title}
                         description={currentMeta.description}
@@ -59,7 +81,7 @@ function App() {
                 </main>
             </div>
         </div>
-    )
+    );
 }
 
-export default App
+export default App;

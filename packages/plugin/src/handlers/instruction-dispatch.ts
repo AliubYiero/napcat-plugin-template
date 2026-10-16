@@ -19,9 +19,9 @@ import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plu
 import { hasRole, type UserRole } from '../core/admin';
 import { pluginState } from '../core/state';
 import {
+    type InstructionDefinition,
     instructionSetMapper,
     rootInstructionSetMapper,
-    type InstructionDefinition,
 } from './instruction-registry';
 import { sendReply } from './utils';
 
@@ -32,7 +32,11 @@ export type DispatchDecision =
     /** 作用域不符: 回复固定提示 */
     | { type: 'scopeHint'; message: string }
     /** 执行: 参数已切好, 门槛已通过 */
-    | { type: 'run'; definition: InstructionDefinition; commands: string[] };
+    | {
+          type: 'run';
+          definition: InstructionDefinition;
+          commands: string[];
+      };
 
 const SCOPE_HINT: Record<'group' | 'private', string> = {
     group: '该指令仅限群聊使用',
@@ -45,7 +49,10 @@ const SCOPE_HINT: Record<'group' | 'private', string> = {
  * @param commands 去前缀并切词后的参数数组 (`['reminder', 'add', '...']`)
  * @param userRole 入口处推导的角色 (来源会话即 `userRole.from.type`)
  */
-export function resolveDispatch(commands: string[], userRole: UserRole): DispatchDecision {
+export function resolveDispatch(
+    commands: string[],
+    userRole: UserRole,
+): DispatchDecision {
     const arg1 = (commands[0] ?? '').toLowerCase();
     if (!arg1) return { type: 'silent' };
 
@@ -70,14 +77,17 @@ export function resolveDispatch(commands: string[], userRole: UserRole): Dispatc
 
     // 形态化作用域规则: 命中即用其门槛, 未命中静默 (权限防线闭合, 无穿透路径)
     if (definition.scopeRules?.length) {
-        const rule = definition.scopeRules.find((r) => r.args === rest.length);
+        const rule = definition.scopeRules.find(
+            (r) => r.args === rest.length,
+        );
         if (!rule) return { type: 'silent' };
         requiredRole = rule.requiredRole;
         scope = rule.scope;
     }
 
     // 权限不足: 静默 (放最前, 避免在无权时泄露作用域信息)
-    if (requiredRole && !hasRole(userRole, requiredRole)) return { type: 'silent' };
+    if (requiredRole && !hasRole(userRole, requiredRole))
+        return { type: 'silent' };
 
     // 作用域不符: 回复提示
     if (scope && scope !== userRole.from.type) {
@@ -97,7 +107,7 @@ export async function dispatch(
     ctx: NapCatPluginContext,
     event: OB11Message,
     commands: string[],
-    userRole: UserRole
+    userRole: UserRole,
 ): Promise<void> {
     const decision = resolveDispatch(commands, userRole);
 
@@ -110,7 +120,12 @@ export async function dispatch(
         case 'run':
             // 已受理的指令在此统一计数 (分发层是唯一收口点)
             pluginState.incrementProcessed();
-            await decision.definition.handler(ctx, event, decision.commands, userRole);
+            await decision.definition.handler(
+                ctx,
+                event,
+                decision.commands,
+                userRole,
+            );
             return;
     }
 }

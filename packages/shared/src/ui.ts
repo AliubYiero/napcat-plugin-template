@@ -38,18 +38,11 @@ export const PAGES = [
         order: 10,
     },
     {
-        id: 'config',
-        title: '插件配置',
-        description: '基础设置与参数配置',
-        icon: 'settings',
-        order: 20,
-    },
-    {
         id: 'sessions',
         title: '会话管理',
         description: '管理群聊与好友的启用与禁用',
         icon: 'group',
-        order: 30,
+        order: 20,
     },
 ] as const satisfies readonly PageMeta[];
 

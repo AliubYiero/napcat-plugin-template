@@ -5,7 +5,6 @@ import Sidebar from './components/Sidebar';
 import ToastContainer from './components/ToastContainer';
 import { useStatus } from './hooks/useStatus';
 import { useTheme } from './hooks/useTheme';
-import ConfigPage from './pages/ConfigPage';
 import SessionsPage from './pages/SessionsPage';
 import StatusPage from './pages/StatusPage';
 
@@ -29,24 +28,10 @@ function App() {
 
     const renderPage = () => {
         switch (currentPage) {
-            case 'status':
-                return (
-                    <StatusPage
-                        status={status}
-                        onRefresh={fetchStatus}
-                    />
-                );
-            case 'config':
-                return <ConfigPage />;
             case 'sessions':
                 return <SessionsPage />;
             default:
-                return (
-                    <StatusPage
-                        status={status}
-                        onRefresh={fetchStatus}
-                    />
-                );
+                return <StatusPage status={status} />;
         }
     };
 
@@ -71,7 +56,6 @@ function App() {
                         description={currentMeta.description}
                         isScrolled={isScrolled}
                         status={status}
-                        currentPage={currentPage}
                     />
                     <div className="px-4 md:px-8 pb-8">
                         <div key={currentPage} className="page-enter">

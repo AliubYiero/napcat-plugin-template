@@ -59,6 +59,19 @@ export function buildConfigSchema(
 const FIELDS_ALL: readonly ConfigField[] = FIELDS;
 
 /**
+ * 插件显示名 (package.json 的 `plugin` 字段)
+ *
+ * 【必须】显示名以 package.json 为唯一权威: 取宿主已解析的信息,
+ * 回退链 `plugin` → `name` → 插件 id。拓展页标题与原生面板占位符共用本函数。
+ */
+export function getPluginDisplayName(
+    ctx: NapCatPluginContext,
+): string {
+    const info = readPluginInfo(ctx);
+    return info?.packageJson?.plugin ?? info?.name ?? ctx.pluginName;
+}
+
+/**
  * 汇总 display 占位符所需的值
  *
  * 插件名/描述取宿主已解析的 package.json (getPluginInfo), 拓展页地址由插件 id 拼装。
@@ -69,8 +82,7 @@ function getDisplayTokenValues(
     const info = readPluginInfo(ctx);
     const pkg = info?.packageJson;
     return {
-        pluginDisplayName:
-            pkg?.plugin ?? info?.name ?? ctx.pluginName,
+        pluginDisplayName: getPluginDisplayName(ctx),
         pluginDescription:
             pkg?.description ?? info?.description ?? '',
         extensionUrl: `/plugin/${ctx.pluginName}/page/dashboard`,

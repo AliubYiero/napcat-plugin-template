@@ -1,16 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import ConfigForm, {
+    type FieldRenderer,
+} from '../components/ConfigForm';
 import {
     IconActivity,
     IconClock,
     IconDownload,
-    IconRefresh,
     IconTerminal,
 } from '../components/icons';
-import type { PluginStatus } from '../types';
+import { showToast } from '../hooks/useToast';
+import type { PluginConfig, PluginStatus } from '../types';
+import { noAuthFetch } from '../utils/api';
 
 interface StatusPageProps {
     status: PluginStatus | null;
-    onRefresh: () => void;
 }
 
 /** 将毫秒格式化为可读时长 */
@@ -28,15 +31,22 @@ function formatUptime(uptimeMs: number): string {
     return `${secs}秒`;
 }
 
-export default function StatusPage({
-    status,
-    onRefresh,
-}: StatusPageProps) {
+/**
+ * 自定义字段覆盖注册表 (逃生舱)
+ *
+ * 只改前端呈现, 不改清洗语义。键为 FIELDS 中的字段 key。
+ * 例: adminUsers: MyAdminListEditor,
+ */
+const FIELD_OVERRIDES: Record<string, FieldRenderer> = {};
+
+export default function StatusPage({ status }: StatusPageProps) {
     const [displayUptime, setDisplayUptime] = useState<string>('-');
     const [syncInfo, setSyncInfo] = useState<{
         baseUptime: number;
         syncTime: number;
     } | null>(null);
+    const [config, setConfig] = useState<PluginConfig | null>(null);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (status?.uptime !== undefined && status.uptime > 0) {
@@ -63,6 +73,49 @@ export default function StatusPage({
         return () => clearInterval(interval);
     }, [syncInfo]);
 
+    const fetchConfig = useCallback(async () => {
+        try {
+            const res = await noAuthFetch<PluginConfig>('/config');
+            if (res.code === 0 && res.data) setConfig(res.data);
+        } catch {
+            showToast('获取配置失败', 'error');
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchConfig();
+    }, [fetchConfig]);
+
+    const saveConfig = useCallback(
+        async (update: Partial<PluginConfig>) => {
+            if (!config) return;
+            setSaving(true);
+            try {
+                const newConfig = { ...config, ...update };
+                await noAuthFetch('/config', {
+                    method: 'POST',
+                    body: JSON.stringify(newConfig),
+                });
+                setConfig(newConfig);
+                showToast('配置已保存', 'success');
+            } catch {
+                showToast('保存失败', 'error');
+            } finally {
+                setSaving(false);
+            }
+        },
+        [config],
+    );
+
+    const handleChange = useCallback(
+        (key: keyof PluginConfig, value: unknown) => {
+            if (!config) return;
+            setConfig({ ...config, [key]: value });
+            saveConfig({ [key]: value } as Partial<PluginConfig>);
+        },
+        [config, saveConfig],
+    );
+
     if (!status) {
         return (
             <div className="flex items-center justify-center h-64 empty-state">
@@ -76,7 +129,7 @@ export default function StatusPage({
         );
     }
 
-    const { config, stats } = status;
+    const { stats } = status;
 
     const statCards = [
         {
@@ -128,53 +181,39 @@ export default function StatusPage({
                 ))}
             </div>
 
-            {/* 配置概览 */}
+            {/* 基础配置 */}
             <div className="card p-5 hover-lift animate-fade-in-up">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                        <IconTerminal
-                            size={16}
-                            className="text-gray-400"
-                        />
-                        基础信息
-                    </h3>
-                    <button
-                        type="button"
-                        onClick={onRefresh}
-                        className="btn-ghost btn text-xs px-2.5 py-1.5"
-                    >
-                        <IconRefresh size={13} />
-                        刷新
-                    </button>
-                </div>
-                <div className="space-y-3">
-                    <InfoRow
-                        label="@机器人 触发"
-                        value={
-                            config.allowAtBotTrigger ? '开启' : '关闭'
-                        }
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-5">
+                    <IconTerminal
+                        size={16}
+                        className="text-gray-400"
                     />
-                    <InfoRow
-                        label="超级管理员"
-                        value={
-                            config.adminUsers.length > 0
-                                ? config.adminUsers.join('、')
-                                : '未配置'
-                        }
+                    基础配置
+                </h3>
+                {config ? (
+                    <ConfigForm
+                        config={config}
+                        onChange={handleChange}
+                        overrides={FIELD_OVERRIDES}
                     />
-                </div>
+                ) : (
+                    <div className="flex items-center justify-center h-32 empty-state">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="loading-spinner text-primary" />
+                            <div className="text-gray-400 text-sm">
+                                加载配置中...
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
-        </div>
-    );
-}
 
-function InfoRow({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="flex items-center justify-between py-1">
-            <span className="text-xs text-gray-400">{label}</span>
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                {value}
-            </span>
+            {saving && (
+                <div className="saving-indicator fixed bottom-4 right-4 bg-primary text-white text-xs px-3 py-2 rounded-lg shadow-lg flex items-center gap-2">
+                    <div className="loading-spinner !w-3 !h-3 !border-[1.5px]" />
+                    保存中...
+                </div>
+            )}
         </div>
     );
 }

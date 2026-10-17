@@ -25,7 +25,7 @@ import type {
     PluginModule,
 } from 'napcat-types/napcat-onebot/network/plugin/types';
 
-import { buildConfigSchema } from './config';
+import { buildConfigSchema, getPluginDisplayName } from './config';
 import { pluginState } from './core/state';
 import { handleMessage } from './handlers/message-handler';
 import { EventType } from './onebot-event';
@@ -157,9 +157,10 @@ function registerWebUI(ctx: NapCatPluginContext): void {
 
     // 注册仪表盘页面（显示在 NapCat WebUI 侧边栏）
     // 访问路径: /plugin/<plugin-id>/page/dashboard
+    // 标题取 package.json 的 plugin 显示名 (getPluginDisplayName)
     router.page({
         path: 'dashboard',
-        title: '插件仪表盘',
+        title: getPluginDisplayName(ctx),
         htmlFile: 'webui/index.html',
         description: '插件管理控制台',
     });

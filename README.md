@@ -54,8 +54,7 @@ napcat-plugin-template/
 │   │       │   ├── ToastContainer.tsx # Toast 通知容器
 │   │       │   └── icons.tsx         # SVG 图标组件
 │   │       └── pages/
-│   │           ├── StatusPage.tsx  # 仪表盘页面
-│   │           ├── ConfigPage.tsx  # 配置管理页面
+│   │           ├── StatusPage.tsx  # 仪表盘页面（含插件配置）
 │   │           └── SessionsPage.tsx # 会话管理页面（群聊/好友）
 │   └── shared/               # 前后端共享类型（单一事实来源）
 │       ├── package.json

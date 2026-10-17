@@ -8,11 +8,11 @@
 
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { UserRole, UserRoleName } from '../src/core/admin';
-import { resolveDispatch } from '../src/handlers/instruction-dispatch';
+import { resolveDispatch } from '../src/handlers/instructionDispatch';
 import {
     type InstructionDefinition,
     instructionSetMapper,
-} from '../src/handlers/instruction-registry';
+} from '../src/handlers/instructionRegistry';
 
 const noop = () => {};
 

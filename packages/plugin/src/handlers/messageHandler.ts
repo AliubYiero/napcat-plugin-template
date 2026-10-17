@@ -6,7 +6,7 @@
  *   1. 会话启用检查 → 2. 规范化 rawMessage → 3. 前缀检查 → 4. 切词 → 5. 分发
  *
  * 【必须】接收层不认识指令语义, 也**不做权限校验**——权限属于指令语义,
- * 由分发层统一处理 (见 instruction-dispatch)。
+ * 由分发层统一处理 (见 instructionDispatch)。
  * 【必须】整个函数包在 try/catch 中, 异常记日志不外抛: 它是所有消息事件的入口,
  * 异常外抛会影响插件宿主。
  */
@@ -16,9 +16,9 @@ import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plu
 import { COMMAND_PREFIX } from 'shared';
 import { getUserRole } from '../core/admin';
 import { pluginState } from '../core/state';
-import { sessionConfigService } from '../services/session-config.service';
-import { normalizeRawMessage } from '../utils/at-bot-prefix';
-import { dispatch } from './instruction-dispatch';
+import { sessionConfigService } from '../services/sessionConfigService';
+import { normalizeRawMessage } from '../utils/atBotPrefix';
+import { dispatch } from './instructionDispatch';
 
 /** selfId 缺失的 debug 日志只记一次, 避免每条消息刷屏 */
 let warnedMissingSelfId = false;

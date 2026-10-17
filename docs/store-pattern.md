@@ -20,7 +20,7 @@ NapCat 插件的加载流程是: 模块 import (加载所有文件) → 调用 `
 ### 1. store 文件只定义类并导出类本身
 
 ```ts
-// src/store/xxx.store.ts
+// src/store/XxxStore.ts
 export class XxxStore extends BaseStore<StoreItem> {
     private static instance: XxxStore | null = null;
 
@@ -51,7 +51,7 @@ export class XxxStore extends BaseStore<StoreItem> {
 ### 2. 使用方在调用时惰性获取实例
 
 ```ts
-// src/services/xxx.service.ts
+// src/services/xxxService.ts
 class XxxStoreService {
     private _xxxStore: XxxStore | null = null;
 
@@ -168,12 +168,12 @@ interface SessionConfigBase {
 
 ### 完整示例: 会话级配置 store
 
-> 基类代码以 `packages/plugin/src/store/` 下的实际文件为准, 本节示例仅演示写法; 示例中的子类 `BiliLiveLimitStore` 不落地为模板文件。本模板自带的会话配置子类见 `store/plugin-session-config.store.ts` 的 `PluginSessionConfigStore` (见文末"参考实现")。
+> 基类代码以 `packages/plugin/src/store/` 下的实际文件为准, 本节示例仅演示写法; 示例中的子类 `BiliLiveLimitStore` 不落地为模板文件。本模板自带的会话配置子类见 `store/PluginSessionConfigStore.ts` 的 `PluginSessionConfigStore` (见文末"参考实现")。
 
 第 1 步, 定义配置项与具体 store 子类:
 
 ```ts
-// src/store/bili-live-limit.store.ts
+// src/store/BiliLiveLimitStore.ts
 import { SessionConfigStore, type SessionConfigBase } from './SessionConfigStore';
 
 /** 每个群/私聊的直播监听上限 */
@@ -236,6 +236,6 @@ store.remove(groupId, 'group');                  // true / false
 
 ## 参考实现
 
-本模板: 通用基类见 `packages/plugin/src/store/BaseStore.ts` 与 `store/SessionConfigStore.ts`; 会话配置的具体子类 `PluginSessionConfigStore` 见 `store/plugin-session-config.store.ts`, 其单一读写入口 service 见 `services/session-config.service.ts`; 全局状态单例见 `packages/plugin/src/core/state.ts` (其 `loadDataFile` / `saveDataFile` 是基类的持久化底座)。
+本模板: 通用基类见 `packages/plugin/src/store/BaseStore.ts` 与 `store/SessionConfigStore.ts`; 会话配置的具体子类 `PluginSessionConfigStore` 见 `store/PluginSessionConfigStore.ts`, 其单一读写入口 service 见 `services/sessionConfigService.ts`; 全局状态单例见 `packages/plugin/src/core/state.ts` (其 `loadDataFile` / `saveDataFile` 是基类的持久化底座)。
 
 napcat-plugin-bilibili-monitor 项目: store 类见 `packages/plugin/src/store/`, 全局状态单例见 `packages/plugin/src/core/state.ts`。

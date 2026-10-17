@@ -27,9 +27,9 @@ import type {
 
 import { buildConfigSchema, getPluginDisplayName } from './config';
 import { pluginState } from './core/state';
-import { handleMessage } from './handlers/message-handler';
-import { EventType } from './onebot-event';
-import { registerApiRoutes } from './services/api-service';
+import { handleMessage } from './handlers/messageHandler';
+import { EventType } from './onebotEvent';
+import { registerApiRoutes } from './services/apiService';
 import type { PluginConfig } from './types';
 
 // ==================== 配置 UI Schema ====================

@@ -80,13 +80,13 @@ block-beta
 
 | 文件 | 职责 |
 |------|------|
-| `packages/plugin/src/services/api-service.ts` | WebUI API 路由注册（状态、配置、会话管理接口） |
+| `packages/plugin/src/services/apiService.ts` | WebUI API 路由注册（状态、配置、会话管理接口） |
 
 ### 消息处理
 
 | 文件 | 职责 |
 |------|------|
-| `packages/plugin/src/handlers/message-handler.ts` | 消息事件入口，命令解析、CD 冷却、消息发送工具（含合并转发消息）、权限检查 |
+| `packages/plugin/src/handlers/messageHandler.ts` | 消息事件入口，命令解析、CD 冷却、消息发送工具（含合并转发消息）、权限检查 |
 
 ### 前端 WebUI
 
@@ -369,7 +369,7 @@ const memberInfo = await ctx.actions.call(
 发送合并转发消息（多条消息合并为一条卡片）：
 
 ```typescript
-import { sendForwardMsg, ForwardNode } from './handlers/message-handler';
+import { sendForwardMsg, ForwardNode } from './handlers/messageHandler';
 
 // 构造转发节点
 const nodes: ForwardNode[] = [
@@ -403,7 +403,7 @@ await sendForwardMsg(ctx, userId, false, nodes);
 在群聊中检查是否为管理员/群主：
 
 ```typescript
-import { isAdmin } from './handlers/message-handler';
+import { isAdmin } from './handlers/messageHandler';
 
 // 在消息处理中检查权限
 if (!isAdmin(event)) {
@@ -478,7 +478,7 @@ const schema = ctx.NapCatConfig.combine(
 - **配置持久化**：通过 `pluginState.updateConfig()` / `pluginState.replaceConfig()` 保存
 - **数据持久化**：通过 `pluginState.loadDataFile()` / `pluginState.saveDataFile()` 读写业务数据文件
 - **机器人 QQ 号**：通过 `pluginState.selfId` 获取（init 时自动异步获取）
-- **会话配置（群/好友）**：不在配置文件里，由 `services/session-config.service`（`sessionConfigService.isSessionEnabled(id, type)` / `setSessionEnabled`）读写，默认关闭
+- **会话配置（群/好友）**：不在配置文件里，由 `services/sessionConfigService`（`sessionConfigService.isSessionEnabled(id, type)` / `setSessionEnabled`）读写，默认关闭
 - **定时器管理**：将定时器存入 `pluginState.timers` Map，cleanup 时会自动全部清理
 - **资源清理**：在 `plugin_cleanup` 中必须清理定时器、关闭连接，否则会导致内存泄漏
 - **数据存储**：使用 `ctx.dataPath` 获取插件专属数据目录
@@ -495,7 +495,7 @@ const schema = ctx.NapCatConfig.combine(
   ctx.logger.error('(╥﹏╥) 连接失败');
   ```
 - **前端图标**：使用 SVG 图标，不要使用 emoji。推荐方式：
-  - 将 SVG 封装为 React 组件（参考 `packages/webui/src/components/icons.tsx`）
+  - 将 SVG 封装为 React 组件（参考 `packages/webui/src/components/Icons.tsx`）
   - 或使用 inline SVG `<svg>` 标签
   ```tsx
   // 正确：SVG 图标组件

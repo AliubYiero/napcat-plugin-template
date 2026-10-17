@@ -7,7 +7,7 @@ import {
     IconHelp,
     IconPlugin,
     IconSettings,
-} from './icons';
+} from './Icons';
 
 interface SidebarProps {
     currentPage: PageId;

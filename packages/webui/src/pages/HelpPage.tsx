@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { IconHelp, IconSearch } from '../components/icons';
+import { IconHelp, IconSearch } from '../components/Icons';
 import type {
     Cmd,
     ContentHelp,

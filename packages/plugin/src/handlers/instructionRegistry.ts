@@ -7,7 +7,7 @@
  * - 【必须】指令名在分发前统一小写, 指令不区分大小写
  * - 【必须】因此**注册表的键必须全小写**——分发层用小写后的名字查表,
  *   驼峰或大写键永远命中不了 (不会被报错, 只会静默失效)
- * - 【必须】未命中模块/子指令/一级指令时静默返回 (见 instruction-dispatch)
+ * - 【必须】未命中模块/子指令/一级指令时静默返回 (见 instructionDispatch)
  *
  * 两种命名空间形态最终汇入同一个校验终点 (dispatch):
  * - 二级命名空间: 模块 → 子指令, 注册在 instructionSetMapper
@@ -17,9 +17,9 @@
 import type { OB11Message } from 'napcat-types/napcat-onebot';
 import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plugin/types';
 import type { UserRole, UserRoleName } from '../core/admin';
-import { helpHandler } from './commands/help.handler';
-import { pingHandler } from './commands/ping.handler';
-import { statusHandler } from './commands/status.handler';
+import { helpHandler } from './commands/helpHandler';
+import { pingHandler } from './commands/pingHandler';
+import { statusHandler } from './commands/statusHandler';
 
 /**
  * 指令 handler

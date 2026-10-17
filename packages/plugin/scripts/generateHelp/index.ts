@@ -24,7 +24,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Cmd, Role } from './cmd.ts';
-import { templateHelp } from './cmds/template-help.ts';
+import { templateHelp } from './cmds/templateHelp.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

@@ -18,7 +18,7 @@ import {
     EXTENSION_URL_TOKEN,
     PLUGIN_DESCRIPTION_TOKEN,
     PLUGIN_DISPLAY_NAME_TOKEN,
-} from './display-tokens';
+} from './displayTokens';
 
 // ==================== 字段描述符类型 ====================
 
@@ -143,7 +143,7 @@ export interface SectionFieldDescriptor extends FieldBase {
 
 export interface DisplayFieldDescriptor {
     kind: 'display';
-    /** 展示用 HTML 片段 (可含 {{...}} 占位符, 见 display-tokens) */
+    /** 展示用 HTML 片段 (可含 {{...}} 占位符, 见 displayTokens) */
     content: string;
     /** 可见范围, 缺省为 both */
     scope?: FieldScope;
@@ -203,7 +203,7 @@ export interface PluginConfig {
  * 自定义前端交互用 webui 的覆盖注册表实现, 不改变这里的 kind。
  * `key` 会被校验为 PluginConfig 的键; 布局字段 (section/display) 不带 key。
  * 可选 `scope` 控制可见范围 (webui/panel/both, 默认 both), 仅影响呈现。
- * display 的 `content` 可含 {{...}} 占位符, 见 display-tokens.ts。
+ * display 的 `content` 可含 {{...}} 占位符, 见 displayTokens.ts。
  */
 export const FIELDS = [
     {

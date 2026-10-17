@@ -58,7 +58,7 @@
 
 **实现建议**
 
-- 【应该】将剥离逻辑抽为独立纯函数模块, 例如 `at-bot-prefix.ts`, 导出:
+- 【应该】将剥离逻辑抽为独立纯函数模块, 例如 `atBotPrefix.ts`, 导出:
 
   ```ts
   function stripAtBotPrefix(rawMessage: string, selfId: string): string
@@ -185,7 +185,7 @@ max: {
 
 新增一个指令时:
 
-- [ ] 【必须】在 `handlers/<模块>/xxx.handler.ts` 写业务 handler, 函数签名 `(ctx, event, commands) => void`, 内部不做权限/作用域校验。
+- [ ] 【必须】在 `handlers/<模块>/xxxHandler.ts` 写业务 handler, 函数签名 `(ctx, event, commands) => void`, 内部不做权限/作用域校验。
 - [ ] 【必须】在 `instructionSetMapper` 对应模块下注册: `{ handler }`, 按需声明 `requiredRole` / `scope`。
 - [ ] 【应该】参数形态绑定不同权限时才用 `scopeRules`, 并确认所有形态已枚举完备 (未命中形态会被静默吞掉)。
 - [ ] 【应该】需要调整角色档位或推导规则时改权限模块, 不改分发层 (见 [permission-pattern](./permission-pattern.md))。
@@ -206,4 +206,4 @@ max: {
 
 ## 参考实现
 
-消息接收入口见 `packages/plugin/src/handlers/message-handler.ts`, 指令注册表与分发见同目录指令模块; 示例业务 handler 为 live 模块的 `addLiveHandler` / `mentionLiveHandler` / `maxLiveHandler`。权限模块的实例索引见 [permission-pattern](./permission-pattern.md)。@机器人 CQ 段剥离逻辑见 `at-bot-prefix.ts` (参考项目尚未实现, 待实现)。
+消息接收入口见 `packages/plugin/src/handlers/messageHandler.ts`, 指令注册表与分发见同目录指令模块; 示例业务 handler 为 live 模块的 `addLiveHandler` / `mentionLiveHandler` / `maxLiveHandler`。权限模块的实例索引见 [permission-pattern](./permission-pattern.md)。@机器人 CQ 段剥离逻辑见 `atBotPrefix.ts` (参考项目尚未实现, 待实现)。

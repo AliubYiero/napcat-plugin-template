@@ -5,7 +5,7 @@ import {
     IconRefresh,
     IconSearch,
     IconX,
-} from '../components/icons';
+} from '../components/Icons';
 import { showToast } from '../hooks/useToast';
 import type { SessionInfo } from '../types';
 import { noAuthFetch } from '../utils/api';

@@ -10,7 +10,7 @@
  */
 
 import { sendHelpMessage } from '../../utils/helpMessage';
-import type { InstructionHandler } from '../instruction-registry';
+import type { InstructionHandler } from '../instructionRegistry';
 import { HELP_TEXT_MAP } from './helpText.generated';
 
 /** 帮助图片文件名 (纯命名映射, 内容见 src/assets/) */

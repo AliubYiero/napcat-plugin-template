@@ -7,7 +7,7 @@
 
 import type { UserRoleName } from '../../core/admin';
 import { pluginState } from '../../core/state';
-import type { InstructionHandler } from '../instruction-registry';
+import type { InstructionHandler } from '../instructionRegistry';
 import { sendReply } from '../utils';
 
 /** 角色档位的中文展示名 (与四档模型一一对应) */

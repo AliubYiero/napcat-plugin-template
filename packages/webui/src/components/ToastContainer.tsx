@@ -3,7 +3,7 @@ import {
     type ToastType,
     useToasts,
 } from '../hooks/useToast';
-import { IconAlert, IconCheck, IconInfo, IconX } from './icons';
+import { IconAlert, IconCheck, IconInfo, IconX } from './Icons';
 
 const typeStyles: Record<
     ToastType,

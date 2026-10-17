@@ -20,7 +20,7 @@ import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plu
 import { pluginState } from '../core/state';
 import { HELP_PANELS } from '../handlers/help/helpData.generated';
 import type { PluginConfig, SessionType } from '../types';
-import { sessionConfigService } from './session-config.service';
+import { sessionConfigService } from './sessionConfigService';
 
 /** 会话类型守卫: 收窄外部输入, 供路由复用 */
 function isSessionType(value: unknown): value is SessionType {

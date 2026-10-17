@@ -7,7 +7,7 @@
 // 配置单一声明源 (字段描述符 + PluginConfig + 默认值/清洗派生)
 export * from './config';
 // 展示块占位符 (token 常量 + 解析纯函数)
-export * from './display-tokens';
+export * from './displayTokens';
 // 帮助面板类型 (与上游 napcat-help-generate 手工同步)
 export * from './help';
 // WebUI 骨架元信息 (页面清单 + PageId)

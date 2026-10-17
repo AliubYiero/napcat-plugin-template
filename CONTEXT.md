@@ -26,7 +26,7 @@ _Avoid_: 当成"字段是否生效的开关"——它不控制字段是否被保
 
 ### 展示块占位符 (display token)
 
-`display` 字段 `content` 里以 `{{...}}` 声明的动态值 (插件显示名 / 描述 / 拓展页地址), 由前后端各自解析 (后端用 ctx 插件信息, 前端用构建期注入身份)。**未命中回退空串, 注入值做 HTML 转义**。常量与解析纯函数见 `packages/shared/src/display-tokens.ts`。
+`display` 字段 `content` 里以 `{{...}}` 声明的动态值 (插件显示名 / 描述 / 拓展页地址), 由前后端各自解析 (后端用 ctx 插件信息, 前端用构建期注入身份)。**未命中回退空串, 注入值做 HTML 转义**。常量与解析纯函数见 `packages/shared/src/displayTokens.ts`。
 _Avoid_: "模板引擎"——它只是固定三个 token 的字符串替换, 不是一个通用模板系统。
 
 ### 指令定义 (InstructionDefinition)

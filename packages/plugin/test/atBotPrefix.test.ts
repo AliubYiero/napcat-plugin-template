@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
     normalizeRawMessage,
     stripAtBotPrefix,
-} from '../src/utils/at-bot-prefix';
+} from '../src/utils/atBotPrefix';
 
 const SELF = '268491285';
 

@@ -21,15 +21,15 @@ napcat-plugin-template/
 │   │       │   ├── state.ts          # 全局状态管理单例 + 配置清洗
 │   │       │   └── admin.ts          # 权限模块：四档角色推导与线性比较
 │   │       ├── utils/
-│   │       │   └── at-bot-prefix.ts  # @机器人 CQ 段剥离（纯函数）
+│   │       │   └── atBotPrefix.ts    # @机器人 CQ 段剥离（纯函数）
 │   │       ├── handlers/
-│   │       │   ├── message-handler.ts      # 接收层：会话启用 → 规范化 → 前缀 → 切词 → 分发
-│   │       │   ├── instruction-registry.ts # 指令注册表（两级命名空间）
-│   │       │   ├── instruction-dispatch.ts # 分发层：统一校验、失败反馈不对称
+│   │       │   ├── messageHandler.ts       # 接收层：会话启用 → 规范化 → 前缀 → 切词 → 分发
+│   │       │   ├── instructionRegistry.ts  # 指令注册表（两级命名空间）
+│   │       │   ├── instructionDispatch.ts  # 分发层：统一校验、失败反馈不对称
 │   │       │   ├── utils.ts                # 发送工具 + 消息段工厂
 │   │       │   └── commands/               # 执行层：按模块分的指令 handler
 │   │       └── services/
-│   │           └── api-service.ts    # WebUI API 路由（无认证模式）
+│   │           └── apiService.ts     # WebUI API 路由（无认证模式）
 │   ├── webui/                # React SPA 前端（独立构建）
 │   │   ├── package.json
 │   │   ├── index.html
@@ -52,7 +52,7 @@ napcat-plugin-template/
 │   │       │   ├── Sidebar.tsx       # 侧边栏导航
 │   │       │   ├── Header.tsx        # 页面头部
 │   │       │   ├── ToastContainer.tsx # Toast 通知容器
-│   │       │   └── icons.tsx         # SVG 图标组件
+│   │       │   └── Icons.tsx         # SVG 图标组件
 │   │       └── pages/
 │   │           ├── StatusPage.tsx  # 仪表盘页面（含插件配置）
 │   │           └── SessionsPage.tsx # 会话管理页面（群聊/好友）
@@ -117,8 +117,8 @@ pnpm install
 ### 3. 开发你的功能
 
 - **添加配置项**: 编辑 `packages/shared/src/index.ts`（前后端类型同步生效）和 `packages/plugin/src/config.ts`
-- **消息处理**: 编辑 `packages/plugin/src/handlers/message-handler.ts`
-- **API 路由**: 编辑 `packages/plugin/src/services/api-service.ts`
+- **消息处理**: 编辑 `packages/plugin/src/handlers/messageHandler.ts`
+- **API 路由**: 编辑 `packages/plugin/src/services/apiService.ts`
 - **状态管理**: 编辑 `packages/plugin/src/core/state.ts`
 - **WebUI 页面**: 编辑 `packages/webui/src/pages/` 下的页面组件
 
@@ -292,7 +292,7 @@ pluginState.updateConfig({ key: value });          // 合并更新
 pluginState.replaceConfig(fullConfig);             // 完整替换
 
 // 会话级配置（群/好友）不在配置文件里，由独立 service 承载（默认关闭）
-import { sessionConfigService } from '../services/session-config.service';
+import { sessionConfigService } from '../services/sessionConfigService';
 sessionConfigService.setSessionEnabled(id, type, enabled); // type: 'group' | 'private'
 sessionConfigService.isSessionEnabled(id, type);           // 检查会话启用状态
 
@@ -310,7 +310,7 @@ import {
     sendGroupMessage, sendPrivateMessage, sendGroupForwardMsg,
     setMsgEmojiLike, uploadGroupFile,
     textSegment, imageSegment, atSegment, replySegment, buildForwardNode
-} from '../handlers/message-handler';
+} from '../handlers/messageHandler';
 
 // 发送群消息（带回复）
 await sendGroupMessage(ctx, groupId, [

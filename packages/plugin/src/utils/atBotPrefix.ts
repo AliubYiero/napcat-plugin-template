@@ -4,7 +4,7 @@
  * 范式: docs/instruction-pattern.md 的 "1.1 @机器人 CQ 段剥离"
  *
  * 本模块只负责剥离, 不负责整体 trim()、trimStart(), 也不产生日志副作用——
- * 编排与日志由接收层 (handlers/message-handler.ts) 承担。
+ * 编排与日志由接收层 (handlers/messageHandler.ts) 承担。
  */
 
 /** 消息开头第一个 at CQ 段 (CQ 标记大小写不敏感, 属性部分整体捕获) */

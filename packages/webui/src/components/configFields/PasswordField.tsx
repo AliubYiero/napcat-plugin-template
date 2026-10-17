@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { PasswordFieldDescriptor } from 'shared';
-import { IconEye, IconEyeOff } from '../icons';
+import { IconEye, IconEyeOff } from '../Icons';
 import type { ValueFieldProps } from './types';
 
 export default function PasswordField({

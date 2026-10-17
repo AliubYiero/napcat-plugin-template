@@ -2,7 +2,7 @@
  * 权限模块
  *
  * 回答参与者身份 (发送者 / 机器人), 不回答"这条指令需要谁"——后者是指令定义里的
- * 门槛声明 (`requiredRole`), 校验时机与失败反馈见 instruction-dispatch.
+ * 门槛声明 (`requiredRole`), 校验时机与失败反馈见 instructionDispatch.
  *
  * 范式: docs/permission-pattern.md
  * - 【必须】推导而非配置: 除 superAdmin 需配置名单外, 发送者角色全部从消息事件推导

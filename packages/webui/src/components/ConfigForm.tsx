@@ -5,17 +5,17 @@ import type {
     ValueFieldDescriptor,
 } from 'shared';
 import { FIELDS } from 'shared';
-import BooleanField from './config-fields/BooleanField';
+import BooleanField from './configFields/BooleanField';
 import {
     DisplayField,
     SectionField,
-} from './config-fields/LayoutFields';
-import MultiSelectField from './config-fields/MultiSelectField';
-import NumberField from './config-fields/NumberField';
-import PasswordField from './config-fields/PasswordField';
-import SelectField from './config-fields/SelectField';
-import StringListField from './config-fields/StringListField';
-import TextField from './config-fields/TextField';
+} from './configFields/LayoutFields';
+import MultiSelectField from './configFields/MultiSelectField';
+import NumberField from './configFields/NumberField';
+import PasswordField from './configFields/PasswordField';
+import SelectField from './configFields/SelectField';
+import StringListField from './configFields/StringListField';
+import TextField from './configFields/TextField';
 
 /** 覆盖组件 props: 逃生舱只改呈现, 不清洗语义 */
 export interface FieldRenderProps<T = unknown> {

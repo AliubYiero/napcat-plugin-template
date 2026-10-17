@@ -8,7 +8,7 @@
  * 【必须】store 实例在方法内惰性获取, 不在模块加载期触碰 (此时 ctx / dataPath 尚不可用)。
  */
 
-import { PluginSessionConfigStore } from '../store/plugin-session-config.store';
+import { PluginSessionConfigStore } from '../store/PluginSessionConfigStore';
 import type { SessionType } from '../types';
 
 class SessionConfigService {

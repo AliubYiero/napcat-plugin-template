@@ -22,7 +22,7 @@ import {
     type InstructionDefinition,
     instructionSetMapper,
     rootInstructionSetMapper,
-} from './instruction-registry';
+} from './instructionRegistry';
 import { sendReply } from './utils';
 
 /** 分发判定结果 */
@@ -100,7 +100,7 @@ export function resolveDispatch(
 /**
  * 分发入口: 判定 → 反馈或执行
  *
- * 【必须】本函数不吞异常, 由接收层 (message-handler) 统一 try/catch,
+ * 【必须】本函数不吞异常, 由接收层 (messageHandler) 统一 try/catch,
  * 保证任何 handler 异常都不会外抛到插件宿主。
  */
 export async function dispatch(

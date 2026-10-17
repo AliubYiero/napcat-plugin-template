@@ -34,6 +34,7 @@ describe('FIELDS 声明源', () => {
         const valueKinds = [
             'boolean',
             'text',
+            'password',
             'number',
             'select',
             'multiSelect',

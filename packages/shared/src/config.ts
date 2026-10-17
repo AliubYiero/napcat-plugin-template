@@ -35,14 +35,20 @@ export interface ConfigOption {
  * | ------------- | -------------------------- | ------------ | ------------ |
  * | boolean       | typeof 守卫, 回退默认      | 开关         | 开关         |
  * | text          | typeof 守卫, 回退默认      | 文本框       | 文本框       |
+ * | password      | 同 text (typeof 守卫)      | (不渲染)     | 密码框       |
  * | number        | typeof + 区间, 回退默认    | 数字框       | 数字框       |
  * | select        | 必须命中 options, 否则默认 | 下拉单选     | 下拉单选     |
  * | multiSelect   | 过滤非法值, 空数组合法     | 下拉多选     | 复选         |
  * | stringList    | 逗号串/数组 → 去空项数组   | 逗号文本框   | 逗号文本框   |
+ *
+ * 【例外】`password` 是唯一的 webui-only kind: 原生面板无密码控件, 故该 kind 一律
+ *   不在原生面板渲染 (见 plugin 的 buildConfigSchema), 只在自建前端出现。
+ * 【警告】密钥明文落盘 (config.json) 并明文往返自建前端, 仅适用于对安全性要求不高的场景。
  */
 export type ValueFieldKind =
     | 'boolean'
     | 'text'
+    | 'password'
     | 'number'
     | 'select'
     | 'multiSelect'
@@ -81,6 +87,19 @@ export interface TextFieldDescriptor extends FieldBase {
     placeholder?: string;
 }
 
+/**
+ * 密码字段 (webui-only)
+ *
+ * 语义与 `text` 一致 (清洗/落盘/默认值形态相同), 差别仅在前端渲染为密码框。
+ * 【例外】原生面板无密码控件, 本 kind 一律不在原生面板渲染 (见 plugin 的 buildConfigSchema)。
+ * 【警告】不脱敏: 密钥明文落盘并明文往返自建前端, 仅适用于安全性要求不高的场景。
+ */
+export interface PasswordFieldDescriptor extends FieldBase {
+    kind: 'password';
+    default: string;
+    placeholder?: string;
+}
+
 export interface NumberFieldDescriptor extends FieldBase {
     kind: 'number';
     default: number;
@@ -111,6 +130,7 @@ export interface StringListFieldDescriptor extends FieldBase {
 export type ValueFieldDescriptor =
     | BooleanFieldDescriptor
     | TextFieldDescriptor
+    | PasswordFieldDescriptor
     | NumberFieldDescriptor
     | SelectFieldDescriptor
     | MultiSelectFieldDescriptor
@@ -214,7 +234,7 @@ export const FIELDS = [
         default: [],
     },
     // TODO: 在这里添加你的配置项
-    // 可选 kind: boolean / text / number / select / multiSelect / stringList
+    // 可选 kind: boolean / text / password / number / select / multiSelect / stringList
     //            section (分组标题) / display (纯展示, content 为 HTML)
 ] as const satisfies readonly ConfigField[];
 
@@ -261,6 +281,7 @@ function cloneValue(value: unknown): unknown {
  * | ----------- | ----------------------------------------------------- |
  * | boolean     | typeof 守卫; 不合法保留默认值                          |
  * | text        | typeof 守卫; 不合法保留默认值                          |
+ * | password    | 同 text (typeof 守卫; 不合法保留默认值)                |
  * | number      | typeof + 区间钳制; 不合法回退默认值                    |
  * | select      | 必须命中 options 的 value; 否则回退默认值              |
  * | multiSelect | 过滤非法值; **空数组是合法语义**, 不回退默认值          |
@@ -290,6 +311,7 @@ function sanitizeValue(
         case 'boolean':
             return typeof value === 'boolean' ? value : field.default;
         case 'text':
+        case 'password':
             return typeof value === 'string' ? value : field.default;
         case 'number': {
             if (

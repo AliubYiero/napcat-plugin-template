@@ -12,6 +12,7 @@ import {
 } from './config-fields/LayoutFields';
 import MultiSelectField from './config-fields/MultiSelectField';
 import NumberField from './config-fields/NumberField';
+import PasswordField from './config-fields/PasswordField';
 import SelectField from './config-fields/SelectField';
 import StringListField from './config-fields/StringListField';
 import TextField from './config-fields/TextField';
@@ -99,6 +100,15 @@ export default function ConfigForm({
                     case 'text':
                         return (
                             <TextField
+                                key={field.key}
+                                field={field}
+                                value={value as string}
+                                onChange={handleChange}
+                            />
+                        );
+                    case 'password':
+                        return (
+                            <PasswordField
                                 key={field.key}
                                 field={field}
                                 value={value as string}

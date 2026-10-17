@@ -41,13 +41,17 @@ export const DEFAULT_CONFIG: PluginConfig = getDefaultConfig();
  *   - multiSelect(key, label, options, defaultValue?, description?) → 下拉多选
  *   - html(content) / plainText(content)                        → 纯展示, 不保存值
  *   - combine(...items)                                         → 合并为 Schema
+ *
+ * 【例外】`password` kind 是 webui-only: 原生面板无密码控件, 故一律不在此渲染
+ *   (见下方 filter), 只在自建前端出现。
  */
 export function buildConfigSchema(
     ctx: NapCatPluginContext,
 ): PluginConfigSchema {
     const values = getDisplayTokenValues(ctx);
     const items = FIELDS_ALL.filter(
-        (field) => field.scope !== 'webui',
+        (field) =>
+            field.scope !== 'webui' && field.kind !== 'password',
     ).map((field) => toNapCatItem(ctx, field, values));
     return ctx.NapCatConfig.combine(...items);
 }
@@ -116,6 +120,15 @@ function toNapCatItem(
                 field.description,
             );
         case 'text':
+            return NapCatConfig.text(
+                field.key,
+                field.label,
+                field.default,
+                field.description,
+            );
+        case 'password':
+            // webui-only kind: 正常已被 buildConfigSchema 过滤, 不应到达;
+            // 保留兜底以维持 switch 穷尽 (原生面板无密码控件, 降级为明文文本)。
             return NapCatConfig.text(
                 field.key,
                 field.label,

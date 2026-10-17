@@ -77,6 +77,16 @@ await sendReply(ctx, event, imageMessage);
 
 【必须】范式覆盖的消息段范围即上表所列 8 种, 全部提供工厂函数。范围外的消息段类型 (markdown、record、video、location、json、music 等) 不属于本范式覆盖范围, 各项目如需支持应先扩展工厂函数再使用。
 
+【应该】**@ 段后紧跟文本时, 优先用组合工厂 `createAtMessageWithSeparator(qq, name?, separator?)`**, 而非手写 `[createAtMessage(qq, name), createTextMessage(' ')]`。它返回 `[at, text]` 两段消息段数组, `separator` 默认为一个空格 (与 QQ 原生 @ 后自动补空格的观感一致), 用于规避 "@ 段后直接贴图片/文本被客户端挤压" 的排版问题:
+
+```ts
+await sendReply(ctx, event, [
+    createReplyMessage(replyId),
+    ...createAtMessageWithSeparator(qq),
+    createTextMessage('已绑定'),
+]);
+```
+
 `ForwardNode` 参考定义:
 
 ```ts
@@ -108,6 +118,15 @@ export function createAtMessage(qq: string, name?: string): OB11MessageAt {
     const data: OB11MessageAt['data'] = { qq };
     if (name) data.name = name;
     return { type: 'at', data };
+}
+
+/** 创建 "@ + 分隔文本" 组合消息段 (返回 [at, text]; separator 默认一个空格) */
+export function createAtMessageWithSeparator(
+    qq: string,
+    name?: string,
+    separator: string = ' ',
+): Array<OB11MessageAt | OB11MessageText> {
+    return [createAtMessage(qq, name), createTextMessage(separator)];
 }
 
 /** 创建回复消息段 */
@@ -154,13 +173,13 @@ export function createForwardNode(
 
 要点:
 
-- 【应该】工厂函数返回的是**单个消息段**; 多段消息把它们放进数组:
+- 【应该】工厂函数返回的是**单个消息段**; 多段消息把它们放进数组 (组合工厂 `createAtMessageWithSeparator` 是例外, 它直接返回 `[at, text]` 两段, 用展开语法并入):
 
 ```ts
 await sendReply(ctx, event, [
     createReplyMessage(replyId),
-    createAtMessage(qq),
-    createTextMessage(' 已绑定'),
+    ...createAtMessageWithSeparator(qq),
+    createTextMessage('已绑定'),
 ]);
 ```
 
@@ -173,8 +192,8 @@ await sendReply(ctx, event, [
 
 ```ts
 const atAllMessage = [
-    createAtMessage('all'),
-    createTextMessage(' 今晚八点开播'),
+    ...createAtMessageWithSeparator('all'),
+    createTextMessage('今晚八点开播'),
 ];
 ```
 
@@ -250,8 +269,8 @@ async function sendAtAll(
 
     // 4. 构造并发送
     return sendReply(ctx, event, [
-        createAtMessage('all'),
-        createTextMessage(` ${ text }`),
+        ...createAtMessageWithSeparator('all'),
+        createTextMessage(text),
     ]);
 }
 ```
@@ -261,7 +280,7 @@ async function sendAtAll(
 - 【必须】检查顺序固定为 **会话类型 → 权限 → 配额**。前两项是纯本地判定, 最先短路; 配额需要一次 API 往返, 放在最后, 避免为注定失败的调用付出网络开销。
 - 【必须】失败反馈**不对称**: 权限不足静默返回 (防权限探测), 配额不足回复提示 (可用性信息, 不敏感)。理由见 [instruction-pattern](./instruction-pattern.md) 的"校验失败的反馈策略"。
 - 【应该】**优先用声明式门槛**。若 @全体成员 由指令触发, 在指令定义上声明 `requiredRole: 'admin'` 与 `scope: 'group'`, 分发层即完成前两项检查, handler 内不必重复。上面的自包含写法适用于**无 event 的主动推送**路径, 或该发送函数被多个调用点共用、需要自带防线的场合。
-- 【应该】`createAtMessage('all')` 后**紧跟一个文本段**。纯 @全体成员 无正文的消息在多数客户端渲染为空白, 用户看不出意图。
+- 【应该】`createAtMessage('all')` 后**紧跟一个文本段**。纯 @全体成员 无正文的消息在多数客户端渲染为空白, 用户看不出意图。此处**优先用组合工厂 `createAtMessageWithSeparator('all')`** (分隔文本 + 正文), 不要手写 `[createAtMessage('all'), createTextMessage(' ')]`。
 - 【必须】`createAtMessage('all')` **不传** `name` 参数 (该参数用于显示群昵称, 对 `all` 无意义)。
 - 【必须】@全体成员 的消息**只走 `sendReply` / `sendGroupMessage` 等发送工具**, 不因其特殊而直接调用 `ctx.actions.call`。
 
@@ -306,6 +325,7 @@ await sendGroupMessage( pluginState.ctx, groupId, [
 - [ ] 【必须】有 `event` → `sendReply(ctx, event, message)`; 无 `event` 按目标选 `sendGroupMessage` / `sendPrivateMessage`; 合并转发用 `sendForwardMsg`。
 - [ ] 【应该】纯文本消息直接传字符串, 不构造消息段。
 - [ ] 【必须】需要 @ / 回复 / 图片 / 表情 / 文件或多段组合 → 用 `createXxxMessage` 工厂构造成消息段数组再发送。
+- [ ] 【应该】@ 段后紧跟文本时优先用组合工厂 `createAtMessageWithSeparator(qq, name?, separator?)`, 不手写 `[createAtMessage(...), createTextMessage(' ')]`。
 - [ ] 【必须】禁止在业务代码中直接调用 `ctx.actions.call('send_msg' | ...)`。
 - [ ] 【必须】范围内消息段一律用工厂构造; 范围外类型允许手写字面量, 且必须通过 `OB11MessageData` 类型检查。
 - [ ] 【必须】发送 @全体成员 前完成三项前置检查 (会话类型限定 / 发起人 admin / 机器人 `can_at_all` + 当日配额), 顺序为 会话类型 → 发起人权限 → 机器人配额; 机器人身份不自查 `isBotAdmin`。

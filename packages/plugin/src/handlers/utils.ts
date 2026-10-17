@@ -175,6 +175,25 @@ export function createAtMessage(
     return { type: 'at', data };
 }
 
+/**
+ * 创建 "@ + 分隔文本" 组合消息段
+ *
+ * @ 段后紧跟一段分隔文本 (默认一个空格, 与 QQ 原生 @ 后自动补空格的观感一致),
+ * 用于规避 "@ 段后直接贴图片/文本被客户端挤压" 的排版问题。
+ *
+ * @param qq 目标 QQ 号, 取固定值 'all' 即 @全体成员
+ * @param name 群昵称, @全体成员 时无需传入
+ * @param separator @ 段后追加的分隔文本, 默认一个空格
+ * @returns 两段消息段数组 [at, text]
+ */
+export function createAtMessageWithSeparator(
+    qq: string,
+    name?: string,
+    separator: string = ' ',
+): Array<OB11MessageAt | OB11MessageText> {
+    return [createAtMessage(qq, name), createTextMessage(separator)];
+}
+
 /** 创建回复消息段 */
 export function createReplyMessage(id: string): OB11MessageReply {
     return { type: 'reply', data: { id } };

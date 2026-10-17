@@ -15,6 +15,14 @@ NapCat 插件开发模板的文档导航。范式体系的定位、强度分级�
 | [message-send-pattern.md](./message-send-pattern.md) | 消息发送: 发送工具收敛、消息段工厂 |
 | [help-output-pattern.md](./help-output-pattern.md) | 帮助输出: 权威源 → 生成 → 产物 → 运行时变体选择 |
 
+## 架构决策记录 (ADR)
+
+| 文档 | 决策 |
+| --- | --- |
+| [adr/0001-plugin-switch-and-command-prefix.md](./adr/0001-plugin-switch-and-command-prefix.md) | 插件级启停交宿主 (去掉 `enabled`), 指令前缀内部化 (`COMMAND_PREFIX`) |
+
+判据与写法见 [development-pattern.md](./development-pattern.md) 的"架构决策记录 (ADR) 纪律"。
+
 ## 项目级文档
 
 | 文档 | 覆盖范围 |

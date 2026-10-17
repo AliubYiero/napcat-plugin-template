@@ -6,7 +6,7 @@
  *
  * 使用方法：
  *   import { pluginState } from '../core/state';
- *   pluginState.config.enabled;       // 读取配置
+ *   pluginState.config.allowAtBotTrigger; // 读取配置
  *   pluginState.ctx.logger.info(...); // 使用日志
  */
 

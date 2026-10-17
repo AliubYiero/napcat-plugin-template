@@ -51,10 +51,31 @@ FIELDS (字段描述符, ctx-free 纯数据, 放共享包)
 
 除有值字段外, 声明源允许两类**不带 key、不落盘**的字段, 用于组织界面:
 
-- `section`: 分组标题 (仅分隔视觉区块)。
-- `display`: 纯展示块, `content` 为 HTML 片段 (渲染运行时说明、状态提示等)。
+- `section`: 分组标题 (仅分隔视觉区块; 保留 `label`)。
+- `display`: 纯展示块, 仅含 `content` (HTML 片段), 不需要 `label` / `description`。
 
 【必须】运行时数据只允许进入 `display` 展示块, 不得进入可保存字段 (与 [config-pattern.md](./config-pattern.md) 的"Schema 静态/动态边界"一致)。
+
+#### 展示块占位符 (display tokens)
+
+`display.content` 是 ctx-free 静态 HTML, 其中的动态值以 `{{...}}` 占位符声明, 由前后端在各自可得处解析:
+
+- 后端 (原生面板): 用 `ctx` 的插件信息 (插件显示名 / 描述 / 拓展页地址);
+- 前端 (自建前端): 用构建期注入的插件身份。
+
+token 常量与解析纯函数 (`resolveDisplayContent`) 统一在共享包; 【必须】未命中的 token 回退空串, 注入值做 HTML 转义。作者若不需要动态值, 直接把 token 写成字面文案即可。
+
+### 字段可见范围 (scope)
+
+【应该】字段可声明可选 `scope` 控制**在哪些界面呈现**:
+
+| scope   | 呈现于                                       |
+| ------- | -------------------------------------------- |
+| `webui` | 仅自建前端 (ConfigForm)                      |
+| `panel` | 仅 NapCat 原生自动面板 (buildConfigSchema)   |
+| `both`  | 两处都显示 (**默认**, 不填即此)              |
+
+【必须】`scope` 只影响**呈现**: 带 key 的字段即便在某侧被隐藏, 仍清洗、仍落盘。后端 `buildConfigSchema` 过滤掉 `webui`, 前端 `ConfigForm` 过滤掉 `panel`。
 
 ### 逃生舱: 覆盖注册表
 
@@ -86,6 +107,7 @@ FIELDS (字段描述符, ctx-free 纯数据, 放共享包)
 - [ ] 【必须】共享包: `PluginConfig` 加字段 (带注释)
 - [ ] 【必须】共享包: 在描述符数组加同 key 的一项, 声明 `kind` / `label` / `description` / `default`
 - [ ] 【应该】枚举类字段: 候选值抽常量, 描述符与清洗共用同一来源
+- [ ] 【应该】若字段只需在某一个界面出现: 声明 `scope` (`webui` / `panel`)
 - [ ] 【必须】确认 `satisfies` 与键集单测通过 (无需改后端映射与前端表单)
 - [ ] 【应该】若语义有默认值选择 (尤其启用开关): 在 `CONTEXT.md` 声明, 必要时补 ADR
 
@@ -102,4 +124,4 @@ FIELDS (字段描述符, ctx-free 纯数据, 放共享包)
 
 ## 参考实现
 
-本模板: 声明源与派生见 `packages/shared/src/config.ts` (`FIELDS` / `PluginConfig` / `getDefaultConfig` / `sanitizeConfig` / `parseStringList`) 与 `packages/shared/src/ui.ts` (`PAGES` / `DEFAULT_PAGE`); 后端映射见 `packages/plugin/src/config.ts` 的 `buildConfigSchema`; 前端渲染见 `packages/webui/src/components/ConfigForm.tsx` 与 `packages/webui/src/pages/ConfigPage.tsx`; 骨架消费见 `packages/webui/src/App.tsx` 与 `packages/webui/src/components/Sidebar.tsx`。
+本模板: 声明源与派生见 `packages/shared/src/config.ts` (`FIELDS` / `PluginConfig` / `COMMAND_PREFIX` / `getDefaultConfig` / `sanitizeConfig` / `parseStringList`) 与 `packages/shared/src/ui.ts` (`PAGES` / `DEFAULT_PAGE`); 展示块占位符见 `packages/shared/src/display-tokens.ts` (`resolveDisplayContent`); 后端映射 (含 scope 过滤与占位符解析) 见 `packages/plugin/src/config.ts` 的 `buildConfigSchema`; 前端渲染见 `packages/webui/src/components/ConfigForm.tsx` 与 `packages/webui/src/pages/ConfigPage.tsx`; 骨架消费见 `packages/webui/src/App.tsx` 与 `packages/webui/src/components/Sidebar.tsx`。

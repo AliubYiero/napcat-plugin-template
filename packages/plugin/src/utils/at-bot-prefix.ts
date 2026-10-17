@@ -56,7 +56,7 @@ export function stripAtBotPrefix(
  *
  * 【必须】`allowAtBotTrigger` 为 false 时**完全跳过规范化步骤**
  * (不整体 trim()、不剥离、不 trimStart()), `rawMessage` 原样进入前缀检查。
- * 此时 `[CQ:at,qq=...] #cmd` 会因不以 commandPrefix 开头而静默返回。
+ * 此时 `[CQ:at,qq=...] #cmd` 会因不以 COMMAND_PREFIX 开头而静默返回。
  *
  * @param rawMessage 原始消息文本
  * @param selfId 机器人自身 QQ 号

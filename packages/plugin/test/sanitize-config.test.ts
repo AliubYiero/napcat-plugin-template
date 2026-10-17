@@ -21,9 +21,8 @@ describe('sanitizeConfig: 输入整体非法', () => {
     it('清洗不抛错, 损坏配置下仍能启动', () => {
         expect(() =>
             sanitizeConfig({
-                enabled: null,
+                allowAtBotTrigger: null,
                 adminUsers: { foo: 1 },
-                commandPrefix: [],
             }),
         ).not.toThrow();
     });
@@ -32,12 +31,8 @@ describe('sanitizeConfig: 输入整体非法', () => {
 describe('sanitizeConfig: 标量', () => {
     it('类型不符时保留默认值', () => {
         const out = sanitizeConfig({
-            enabled: 'yes',
-            commandPrefix: 123,
             allowAtBotTrigger: 'no',
         });
-        expect(out.enabled).toBe(DEFAULT_CONFIG.enabled);
-        expect(out.commandPrefix).toBe(DEFAULT_CONFIG.commandPrefix);
         expect(out.allowAtBotTrigger).toBe(
             DEFAULT_CONFIG.allowAtBotTrigger,
         );
@@ -45,18 +40,9 @@ describe('sanitizeConfig: 标量', () => {
 
     it('类型正确时采纳外部值', () => {
         const out = sanitizeConfig({
-            enabled: false,
-            commandPrefix: '#bot',
+            allowAtBotTrigger: false,
         });
-        expect(out.enabled).toBe(false);
-        expect(out.commandPrefix).toBe('#bot');
-    });
-
-    it('显式 false 是语义, 不回退默认', () => {
-        expect(
-            sanitizeConfig({ allowAtBotTrigger: false })
-                .allowAtBotTrigger,
-        ).toBe(false);
+        expect(out.allowAtBotTrigger).toBe(false);
     });
 });
 

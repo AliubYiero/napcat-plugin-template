@@ -13,6 +13,7 @@
 
 import type { OB11Message } from 'napcat-types/napcat-onebot';
 import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plugin/types';
+import { COMMAND_PREFIX } from 'shared';
 import { getUserRole } from '../core/admin';
 import { pluginState } from '../core/state';
 import { sessionConfigService } from '../services/session-config.service';
@@ -79,7 +80,7 @@ export async function handleMessage(
         }
 
         // 3. 前缀检查: 不匹配是绝大多数消息的正常路径, 不回复、不记日志
-        const prefix = pluginState.config.commandPrefix || '#cmd';
+        const prefix = COMMAND_PREFIX;
         if (!normalized.startsWith(prefix)) return;
 
         // 4. 切词: 去前缀后按空白切分, 空串会切出 [''], 由分发层的参数检查兜底

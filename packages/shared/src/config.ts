@@ -14,6 +14,12 @@
  * 会话级配置 (群/好友) 不属于本文件, 由 store 承载 (见 docs/store-pattern.md)。
  */
 
+import {
+    EXTENSION_URL_TOKEN,
+    PLUGIN_DESCRIPTION_TOKEN,
+    PLUGIN_DISPLAY_NAME_TOKEN,
+} from './display-tokens';
+
 // ==================== 字段描述符类型 ====================
 
 /** select / multiSelect 的候选项 */
@@ -45,11 +51,23 @@ export type ValueFieldKind =
 /** 全部 kind (含仅布局/展示、不落盘的字段) */
 export type ConfigFieldKind = ValueFieldKind | 'section' | 'display';
 
+/**
+ * 字段可见范围:
+ *   - `webui`  仅自建前端 (webui 的 ConfigForm) 显示
+ *   - `panel`  仅 NapCat 原生自动面板 (buildConfigSchema) 显示
+ *   - `both`   两处都显示 (默认)
+ *
+ * 【必须】scope 只影响呈现: 带 key 的字段即便在某侧隐藏, 仍清洗、仍落盘。
+ */
+export type FieldScope = 'webui' | 'panel' | 'both';
+
 interface FieldBase {
     /** 展示标签 */
     label: string;
     /** 说明文字 */
     description?: string;
+    /** 可见范围, 缺省为 both */
+    scope?: FieldScope;
 }
 
 export interface BooleanFieldDescriptor extends FieldBase {
@@ -103,10 +121,12 @@ export interface SectionFieldDescriptor extends FieldBase {
     kind: 'section';
 }
 
-export interface DisplayFieldDescriptor extends FieldBase {
+export interface DisplayFieldDescriptor {
     kind: 'display';
-    /** 展示用 HTML 片段 */
+    /** 展示用 HTML 片段 (可含 {{...}} 占位符, 见 display-tokens) */
     content: string;
+    /** 可见范围, 缺省为 both */
+    scope?: FieldScope;
 }
 
 /** 带 key 的有值字段 (key 必须是 PluginConfig 的键) */
@@ -125,18 +145,25 @@ export type ConfigField = ConfigValueField | ConfigLayoutField;
 // ==================== 配置接口 ====================
 
 /**
+ * 触发命令前缀 (插件内部单一来源)
+ *
+ * 【必须】前缀不再暴露给用户修改, 只作为插件内部常量使用;
+ * 后端解析、帮助生成等所有需要前缀处一律引用本常量。
+ */
+export const COMMAND_PREFIX = '#cmd';
+
+/**
  * 插件主配置接口
  *
  * 字段集必须与 `FIELDS` 完全一致 (由 satisfies 与单测双重保证)。
+ *
+ * 【必须】插件级全局启用/停用由 NapCat 宿主负责 (setPluginStatus),
+ * 不在插件内自建 `enabled` 开关。
  */
 export interface PluginConfig {
-    /** 全局开关：是否启用插件功能 */
-    enabled: boolean;
-    /** 触发命令前缀，默认为 #cmd */
-    commandPrefix: string;
     /**
      * 是否允许 `@机器人 + 前缀指令` 触发，默认开启。
-     * 关闭后仅识别以 commandPrefix 开头的消息。
+     * 关闭后仅识别以 COMMAND_PREFIX 开头的消息。
      */
     allowAtBotTrigger: boolean;
     /**
@@ -155,14 +182,22 @@ export interface PluginConfig {
  * 【必须】每项必须声明一个可渲染的 base kind (后端面板据此渲染);
  * 自定义前端交互用 webui 的覆盖注册表实现, 不改变这里的 kind。
  * `key` 会被校验为 PluginConfig 的键; 布局字段 (section/display) 不带 key。
+ * 可选 `scope` 控制可见范围 (webui/panel/both, 默认 both), 仅影响呈现。
+ * display 的 `content` 可含 {{...}} 占位符, 见 display-tokens.ts。
  */
 export const FIELDS = [
     {
-        key: 'enabled',
-        kind: 'boolean',
-        label: '启用插件',
-        description: '全局开关，关闭后不会响应任何命令',
-        default: true,
+        kind: 'display',
+        scope: 'panel',
+        content: `<div class="prose dark:prose-invert max-w-none">
+  <div style="padding: 16px; background: linear-gradient(135deg, #fff7fa 0%, #ffeaf2 100%); border: 1px solid rgba(251,114,153,0.22); border-radius: 12px; margin-bottom: 20px; color: #5c2a3d;">
+    <h3 style="margin: 0 0 6px 0; font-size: 18px; font-weight: 600; color: #b23a63;">${PLUGIN_DISPLAY_NAME_TOKEN}</h3>
+    <p style="margin: 0; font-size: 13px; color: #8a5a6c; opacity: 1;">${PLUGIN_DESCRIPTION_TOKEN}</p>
+    <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+      <a href="${EXTENSION_URL_TOKEN}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 6px 14px; background: #fb7299; color: #ffffff; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; line-height: 20px; white-space: nowrap; box-shadow: 0 4px 10px rgba(251,114,153,0.22);" onmouseover="this.style.background='#e85f88'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 14px rgba(251,114,153,0.28)';" onmouseout="this.style.background='#fb7299'; this.style.transform='none'; this.style.boxShadow='0 4px 10px rgba(251,114,153,0.22)';">跳转至拓展页面</a>
+    </div>
+  </div>
+</div>`,
     },
     {
         key: 'allowAtBotTrigger',
@@ -170,13 +205,6 @@ export const FIELDS = [
         label: '@机器人 触发',
         description: '开启后 @机器人 + 前缀指令也可触发',
         default: true,
-    },
-    {
-        key: 'commandPrefix',
-        kind: 'text',
-        label: '命令前缀',
-        description: '触发命令的前缀',
-        default: '#cmd',
     },
     {
         key: 'adminUsers',

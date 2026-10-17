@@ -45,9 +45,8 @@ FIELDS 字段描述符 (共享包, ctx-free 纯数据)   ← 唯一声明源
 
 ```ts
 // 标量: typeof 守卫, 不合法保留默认
-if (typeof raw.enabled === 'boolean') out.enabled = raw.enabled;
-if (typeof raw.commandPrefix === 'string')
-    out.commandPrefix = raw.commandPrefix;
+if (typeof raw.someToggle === 'boolean') out.someToggle = raw.someToggle;
+if (typeof raw.someText === 'string') out.someText = raw.someText;
 
 // 数值: typeof + 区间校验
 if (
@@ -110,6 +109,10 @@ WebUI 的两套呈现 (宿主自动面板 / 自定义前端表单) 均由描述�
 
 启用开关的默认值语义 (**默认开启** / **默认关闭**) 是领域决策, 记入 `CONTEXT.md`, 必要时补 ADR。开关的修改入口 (指令 / WebUI) 由插件自选, 范式不强制。
 
+### 插件级启停不在本文件
+
+插件**全局**的启用/停用由 NapCat 宿主负责 (`pluginManager.setPluginStatus`): 停用后宿主不再调用 `plugin_onmessage`。因此配置文件里**不**自建 `enabled` 之类的全局开关 (它既与宿主状态重复, 又会造成两个真相源)。同理, 指令前缀这类"插件作者定死、用户无需修改"的值应是**插件内部常量**, 而非配置项——配置项只承载需要用户调节的值。
+
 ## 标准范式清单
 
 新增一个配置项时:
@@ -124,7 +127,7 @@ WebUI 的两套呈现 (宿主自动面板 / 自定义前端表单) 均由描述�
 
 - 与 [webui-config-pattern.md](./webui-config-pattern.md): 本文只讲配置**数据的语义与清洗纪律**; 声明如何驱动类型/默认值/两套 WebUI 由该文承接。
 - 与**生命周期铁律**的关系: 配置读盘发生在 `plugin_init` 之后, 清洗是纯函数可在任何时机调用; Schema 构建需要 ctx, 只能在运行期进行。见 [development-pattern](./development-pattern.md)。
-- 与**指令分发范式**的关系: 接收层读取前缀来自配置 (运行期生效), 会话启用状态来自 store; 会话开关在消息入口最前端短路。见 [instruction-pattern](./instruction-pattern.md)。
+- 与**指令分发范式**的关系: 接收层读取前缀来自插件内部常量 (固定值), 会话启用状态来自 store; 会话开关在消息入口最前端短路。见 [instruction-pattern](./instruction-pattern.md)。
 - 与**领域建模纪律**的关系: 启用开关等默认值语义是领域决策, 定型时记入 `CONTEXT.md` 并按需补 ADR。见 [development-pattern](./development-pattern.md) 的"领域建模纪律"与"ADR 纪律"。
 
 ## 参考实现

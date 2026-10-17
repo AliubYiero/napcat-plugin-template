@@ -6,8 +6,8 @@ import type { Cmd } from '../cmd.ts';
  * 修改帮助内容只改本文件, 再执行 `pnpm run help:generate` 重新生成
  * (产物 src/assets/*.png 与 handlers/commands/helpText.generated.ts 禁止手改)。
  *
- * 指令前缀写死在标题文本里 (生成产物是静态图片, 不随 commandPrefix 运行时变化);
- * 修改 commandPrefix 后需重新生成帮助。
+ * 指令前缀写死在标题文本里 (生成产物是静态图片, 不随 COMMAND_PREFIX 运行时变化);
+ * 修改 shared 的 COMMAND_PREFIX 后需同步本文件并重新生成帮助。
  */
 export const templateHelp: Cmd = {
     id: 'template-help',

@@ -10,9 +10,14 @@
 import type {
     NapCatPluginContext,
     PluginConfigSchema,
+    PluginEntry,
 } from 'napcat-types/napcat-onebot/network/plugin/types';
-import type { ConfigField } from 'shared';
-import { FIELDS, getDefaultConfig } from 'shared';
+import type { ConfigField, DisplayTokenValues } from 'shared';
+import {
+    FIELDS,
+    getDefaultConfig,
+    resolveDisplayContent,
+} from 'shared';
 import type { PluginConfig } from './types';
 
 /**
@@ -40,8 +45,46 @@ export const DEFAULT_CONFIG: PluginConfig = getDefaultConfig();
 export function buildConfigSchema(
     ctx: NapCatPluginContext,
 ): PluginConfigSchema {
-    const items = FIELDS.map((field) => toNapCatItem(ctx, field));
+    const values = getDisplayTokenValues(ctx);
+    const items = FIELDS_ALL.filter(
+        (field) => field.scope !== 'webui',
+    ).map((field) => toNapCatItem(ctx, field, values));
     return ctx.NapCatConfig.combine(...items);
+}
+
+/**
+ * FIELDS 的遍历视图: 收窄为描述符统一类型
+ * (as const 字面量元组不含未显式声明的可选属性如 scope)。
+ */
+const FIELDS_ALL: readonly ConfigField[] = FIELDS;
+
+/**
+ * 汇总 display 占位符所需的值
+ *
+ * 插件名/描述取宿主已解析的 package.json (getPluginInfo), 拓展页地址由插件 id 拼装。
+ */
+function getDisplayTokenValues(
+    ctx: NapCatPluginContext,
+): DisplayTokenValues {
+    const info = readPluginInfo(ctx);
+    const pkg = info?.packageJson;
+    return {
+        pluginDisplayName:
+            pkg?.plugin ?? info?.name ?? ctx.pluginName,
+        pluginDescription:
+            pkg?.description ?? info?.description ?? '',
+        extensionUrl: `/plugin/${ctx.pluginName}/page/dashboard`,
+    };
+}
+
+function readPluginInfo(
+    ctx: NapCatPluginContext,
+): PluginEntry | undefined {
+    try {
+        return ctx.pluginManager?.getPluginInfo?.(ctx.pluginName);
+    } catch {
+        return undefined;
+    }
 }
 
 type NapCatConfigItem = PluginConfigSchema[number];
@@ -49,6 +92,7 @@ type NapCatConfigItem = PluginConfigSchema[number];
 function toNapCatItem(
     ctx: NapCatPluginContext,
     field: ConfigField,
+    values: DisplayTokenValues,
 ): NapCatConfigItem {
     const { NapCatConfig } = ctx;
     switch (field.kind) {
@@ -101,6 +145,9 @@ function toNapCatItem(
             // 仅布局: 分组标题
             return NapCatConfig.plainText(field.label);
         case 'display':
-            return NapCatConfig.html(field.content);
+            // 解析 {{...}} 占位符后再交给原生面板渲染
+            return NapCatConfig.html(
+                resolveDisplayContent(field.content, values),
+            );
     }
 }

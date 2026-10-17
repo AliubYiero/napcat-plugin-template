@@ -21,8 +21,9 @@ export default defineConfig({
         {
             name: 'inject-plugin-meta',
             transformIndexHtml(html) {
+                // 占位符语法与 shared/display-tokens 一致 ({{...}})
                 return html.replace(
-                    /%PLUGIN_DISPLAY_NAME%/g,
+                    /\{\{PLUGIN_DISPLAY_NAME\}\}/g,
                     pluginDisplayName,
                 );
             },

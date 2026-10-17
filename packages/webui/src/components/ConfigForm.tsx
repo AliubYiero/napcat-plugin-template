@@ -53,6 +53,8 @@ export default function ConfigForm({
     return (
         <div className="space-y-5">
             {FIELDS_UI.map((field) => {
+                // 仅原生面板显示的字段: 自建前端跳过 (scope 只影响呈现)
+                if (field.scope === 'panel') return null;
                 // 布局/展示字段: 无 key, 不落盘
                 if (!('key' in field)) {
                     return field.kind === 'section' ? (
@@ -62,7 +64,7 @@ export default function ConfigForm({
                         />
                     ) : (
                         <DisplayField
-                            key={`display-${field.label}`}
+                            key={`display-${field.content}`}
                             field={field}
                         />
                     );

@@ -3,7 +3,6 @@ import {
     IconActivity,
     IconClock,
     IconDownload,
-    IconPower,
     IconRefresh,
     IconTerminal,
 } from '../components/icons';
@@ -81,17 +80,6 @@ export default function StatusPage({
 
     const statCards = [
         {
-            label: '插件状态',
-            value: config.enabled ? '运行中' : '已停用',
-            icon: <IconPower size={18} />,
-            color: config.enabled
-                ? 'text-emerald-500'
-                : 'text-red-400',
-            bg: config.enabled
-                ? 'bg-emerald-500/10'
-                : 'bg-red-500/10',
-        },
-        {
             label: '运行时长',
             value: displayUptime,
             icon: <IconClock size={18} />,
@@ -117,7 +105,7 @@ export default function StatusPage({
     return (
         <div className="space-y-6">
             {/* 统计卡片 */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
                 {statCards.map((card) => (
                     <div
                         key={card.label}
@@ -160,10 +148,6 @@ export default function StatusPage({
                     </button>
                 </div>
                 <div className="space-y-3">
-                    <InfoRow
-                        label="命令前缀"
-                        value={config.commandPrefix}
-                    />
                     <InfoRow
                         label="@机器人 触发"
                         value={

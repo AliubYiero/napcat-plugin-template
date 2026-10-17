@@ -17,7 +17,8 @@
             "**",
             "!.githooks",
             "!**/*.generated.ts",
-            "!packages/plugin/types"
+            "!packages/plugin/types",
+            "!packages/webui/index.html"
         ]
     },
     "formatter": {

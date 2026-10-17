@@ -74,9 +74,8 @@ export const plugin_init: PluginModule['plugin_init'] = async (
 export const plugin_onmessage: PluginModule['plugin_onmessage'] =
     async (ctx, event) => {
         // 仅处理消息事件
+        // (插件级启停由 NapCat 宿主负责: 停用后宿主不再调用本函数)
         if (event.post_type !== EventType.MESSAGE) return;
-        // 检查插件是否启用
-        if (!pluginState.config.enabled) return;
         // 委托给消息处理器
         await handleMessage(ctx, event);
     };

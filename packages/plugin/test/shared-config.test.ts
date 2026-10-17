@@ -6,6 +6,7 @@
  * 字段级清洗容错规则见 sanitize-config.test.ts。
  */
 
+import type { ConfigField } from 'shared';
 import {
     FIELDS,
     getDefaultConfig,
@@ -14,14 +15,12 @@ import {
 } from 'shared';
 import { describe, expect, it } from 'vitest';
 
-const EXPECTED_KEYS = [
-    'enabled',
-    'allowAtBotTrigger',
-    'commandPrefix',
-    'adminUsers',
-];
+const EXPECTED_KEYS = ['allowAtBotTrigger', 'adminUsers'];
 
 type ValueField = Extract<(typeof FIELDS)[number], { key: string }>;
+
+/** 遍历视图: as const 字面量元组不含未声明的可选属性 scope */
+const FIELDS_ALL: readonly ConfigField[] = FIELDS;
 
 describe('FIELDS 声明源', () => {
     it('有值字段键集与 PluginConfig 一致', () => {
@@ -46,6 +45,18 @@ describe('FIELDS 声明源', () => {
             expect(field).toHaveProperty('default');
         }
     });
+
+    it('布局/展示字段不带 key, 且 scope 取值合法', () => {
+        for (const field of FIELDS_ALL) {
+            if ('key' in field) continue;
+            expect(['section', 'display']).toContain(field.kind);
+            if (field.scope) {
+                expect(['webui', 'panel', 'both']).toContain(
+                    field.scope,
+                );
+            }
+        }
+    });
 });
 
 describe('getDefaultConfig: 从 FIELDS 派生', () => {
@@ -53,9 +64,7 @@ describe('getDefaultConfig: 从 FIELDS 派生', () => {
         const a = getDefaultConfig();
         const b = getDefaultConfig();
         expect(a).toEqual({
-            enabled: true,
             allowAtBotTrigger: true,
-            commandPrefix: '#cmd',
             adminUsers: [],
         });
         expect(a).not.toBe(b);
@@ -99,5 +108,14 @@ describe('sanitizeConfig: 从 kind 派生 (代表用例)', () => {
             sanitizeConfig({ allowAtBotTrigger: false })
                 .allowAtBotTrigger,
         ).toBe(false);
+    });
+
+    it('已移除的字段 (enabled/commandPrefix) 被丢弃', () => {
+        const out = sanitizeConfig({
+            enabled: true,
+            commandPrefix: '#bot',
+        }) as unknown as Record<string, unknown>;
+        expect(out).not.toHaveProperty('enabled');
+        expect(out).not.toHaveProperty('commandPrefix');
     });
 });

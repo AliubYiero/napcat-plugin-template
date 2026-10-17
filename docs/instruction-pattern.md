@@ -19,14 +19,14 @@
 
 1. 【必须】**群启用检查**: 群消息先查该群是否启用插件, 未启用直接返回 (先于规范化与前缀检查, 避免在禁用群里做无谓的字符串处理)。
 2. 【应该】**规范化 `rawMessage`**: 按配置决定是否剥离开头 @ 机器人的 CQ 段, 以支持 `@机器人 + 前缀指令` 触发 (见 1.1); 配置关闭时整体跳过, `rawMessage` 原样进入前缀检查。
-3. 【必须】**前缀检查**: `rawMessage` 必须以配置的 `commandPrefix` 开头, 否则静默返回。前缀不匹配是绝大多数消息的正常路径, **不回复、不记日志**。
+3. 【必须】**前缀检查**: `rawMessage` 必须以固定前缀 (`COMMAND_PREFIX`, 插件内部常量) 开头, 否则静默返回。前缀不匹配是绝大多数消息的正常路径, **不回复、不记日志**。
 4. 【必须】**切词**: 去掉前缀后 `trim().split(/\s+/)` 得到参数数组。空串会切出 `['']`, 由分发层的参数检查兜底。
 5. 【必须】**分发**: 将参数数组交给分发层。
 
 要点:
 
 - 【必须】整个 `handleMessage` 包在 try/catch 中, 任何异常记日志不外抛——它是所有消息事件的入口, 异常外抛会影响插件宿主。
-- 【应该】前缀、群启用状态与 @ 机器人剥离开关读自配置, 运行期生效, 无需重启。
+- 【应该】前缀来自插件内部常量 (固定值); 会话启用状态来自 store; @ 机器人剥离开关读自配置 (运行期生效, 无需重启)。
 - 【必须】接收层**不做权限校验**。权限属于指令语义, 由分发层统一处理。
 - 【应该】@ 机器人剥离逻辑抽为独立纯函数, `selfId` 取自 `PluginState.selfId`, 群聊与私聊统一处理; debug 日志只记剥离成功与 `selfId` 无效两种情况 (见 1.1)。
 
@@ -45,7 +45,7 @@
 
 - 【可以】提供 `allowAtBotTrigger` 配置项, 类型 `boolean`, 默认 `true`, 经 `sanitizeConfig` 清洗后使用, 运行期生效。
 - 若插件不提供该配置项, 则等价于始终执行剥离。
-- 当 `allowAtBotTrigger = false` 时, **完全跳过规范化步骤** (不整体 `trim()`、不剥离、不 `trimStart()`), `rawMessage` 原样进入前缀检查。此时 `[CQ:at,qq=...] #cmd` 会因不以 `commandPrefix` 开头而静默返回。
+- 当 `allowAtBotTrigger = false` 时, **完全跳过规范化步骤** (不整体 `trim()`、不剥离、不 `trimStart()`), `rawMessage` 原样进入前缀检查。此时 `[CQ:at,qq=...] #cmd` 会因不以 `COMMAND_PREFIX` 开头而静默返回。
 
 **剥离规则**
 
@@ -200,7 +200,7 @@ max: {
 
 - 与**生命周期铁律**的关系: 注册表与 handler 均为纯装配 (构造期零 IO), 可模块加载期导出; 消息事件只在运行期到达。见 [development-pattern](./development-pattern.md)。
 - 与**权限范式**的关系: 分发层消费 `hasRole(UserRole, requiredRole)` 的判定结果, 但不实现角色推导——推导与比较属于权限模块。见 [permission-pattern](./permission-pattern.md)。
-- 与**配置范式**的关系: 前缀、群启用开关与 `allowAtBotTrigger` 读自配置, 经 `sanitizeConfig` 清洗后使用; 会话开关在接收层最前端短路, @机器人剥离在群启用检查之后、前缀检查之前按配置执行。见 [config-pattern](./config-pattern.md)。
+- 与**配置范式**的关系: 前缀为插件内部常量 (固定值); 会话启用状态来自 store, `allowAtBotTrigger` 读自配置 (经 `sanitizeConfig` 清洗后使用)。会话开关在接收层最前端短路, @机器人剥离在会话启用检查之后、前缀检查之前按配置执行。见 [config-pattern](./config-pattern.md)。
 - 与**消息发送范式**的关系: 所有回复走发送工具模块。见 [message-send-pattern](./message-send-pattern.md)。
 - 与**帮助输出范式**的关系: 帮助指令按"角色 + 会话类型"选输出版本 (而非仅按角色), 版本档位与权限档位不是一一对应。见 [help-output-pattern](./help-output-pattern.md)。
 

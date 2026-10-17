@@ -286,7 +286,7 @@ import { EventType } from 'napcat-types/napcat-onebot/event/index';
 import { pluginState } from '../core/state';
 
 // 通过单例访问配置
-const isEnabled = pluginState.config.enabled;
+const allowAtBot = pluginState.config.allowAtBotTrigger;
 
 // 通过单例访问日志器（等价于 ctx.logger）
 pluginState.logger.info('处理消息');
@@ -457,7 +457,7 @@ ctx.router.staticOnMem('/dynamic', [{ path: '/config.json', content: '{}', conte
 ```typescript
 // 使用 ctx.NapCatConfig 构建器
 const schema = ctx.NapCatConfig.combine(
-    ctx.NapCatConfig.boolean('enabled', '启用', true, '描述'),
+    ctx.NapCatConfig.boolean('someFlag', '开关', true, '描述'),
     ctx.NapCatConfig.text('key', '标签', '默认值', '描述'),
     ctx.NapCatConfig.number('count', '数量', 10, '描述'),
     ctx.NapCatConfig.select('mode', '模式', [

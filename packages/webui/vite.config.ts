@@ -10,9 +10,18 @@ const pluginPkg = JSON.parse(
         resolve(__dirname, '../plugin/package.json'),
         'utf-8',
     ),
-) as { name: string; plugin?: string };
+) as {
+    name: string;
+    plugin?: string;
+    version: string;
+    napcat?: { homepage?: string };
+};
 const pluginId = pluginPkg.name;
 const pluginDisplayName = pluginPkg.plugin || pluginId;
+const pluginVersion = pluginPkg.version;
+const pluginGithubUrl =
+    pluginPkg?.napcat?.homepage ||
+    'https://github.com/AliubYiero/napcat-plugin-template';
 
 export default defineConfig({
     plugins: [
@@ -32,6 +41,8 @@ export default defineConfig({
     define: {
         __PLUGIN_ID__: JSON.stringify(pluginId),
         __PLUGIN_DISPLAY_NAME__: JSON.stringify(pluginDisplayName),
+        __PLUGIN_VERSION__: JSON.stringify(pluginVersion),
+        __PLUGIN_GITHUB_URL__: JSON.stringify(pluginGithubUrl),
     },
     base: './',
     build: {

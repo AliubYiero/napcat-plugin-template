@@ -6,7 +6,6 @@ import {
     IconGroup,
     IconPlugin,
     IconSettings,
-    IconSun,
 } from './icons';
 
 interface SidebarProps {
@@ -44,7 +43,10 @@ export default function Sidebar({
                         {__PLUGIN_DISPLAY_NAME__}
                     </h1>
                     <p className="text-[10px] text-gray-400 font-medium tracking-wider">
-                        NAPCAT PLUGIN
+                        {__PLUGIN_ID__
+                            .split(/[-_]/g)
+                            .join(' ')
+                            .toLocaleUpperCase()}
                     </p>
                 </div>
             </div>
@@ -70,23 +72,19 @@ export default function Sidebar({
             </nav>
 
             {/* Footer */}
-            <div className="px-3 pb-2">
+            <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-800">
                 <a
-                    href="https://github.com"
+                    href={__PLUGIN_GITHUB_URL__}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="sidebar-item no-underline"
+                    className="flex items-center justify-center w-full py-2 rounded-lg text-gray-500 bg-gray-50 dark:bg-gray-800/50 text-xs"
                 >
-                    <IconGithub size={18} />
-                    <span>反馈问题</span>
+                    <IconGithub size={16} />
+                    <span className="pl-3">
+                        {__PLUGIN_DISPLAY_NAME__} v
+                        {__PLUGIN_VERSION__}
+                    </span>
                 </a>
-            </div>
-
-            <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-800">
-                <div className="flex items-center justify-center w-full py-2 rounded-lg text-gray-500 bg-gray-50 dark:bg-gray-800/50 cursor-default text-xs gap-2">
-                    <IconSun size={14} className="opacity-60" />
-                    <span>跟随系统主题</span>
-                </div>
             </div>
         </aside>
     );

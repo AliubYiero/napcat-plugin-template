@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { DEFAULT_PAGE, PAGES, type PageId } from 'shared';
+import { PAGES } from 'shared';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import ToastContainer from './components/ToastContainer';
+import { usePageRoute } from './hooks/usePageRoute';
 import { useStatus } from './hooks/useStatus';
 import { useTheme } from './hooks/useTheme';
 import HelpPage from './pages/HelpPage';
@@ -10,8 +11,7 @@ import SessionsPage from './pages/SessionsPage';
 import StatusPage from './pages/StatusPage';
 
 function App() {
-    const [currentPage, setCurrentPage] =
-        useState<PageId>(DEFAULT_PAGE);
+    const [currentPage, setCurrentPage] = usePageRoute();
     const [isScrolled, setIsScrolled] = useState(false);
     const { status, fetchStatus } = useStatus();
 

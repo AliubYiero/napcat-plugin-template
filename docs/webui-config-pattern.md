@@ -95,6 +95,15 @@ token 常量与解析纯函数 (`resolveDisplayContent`) 统一在共享包; 【
 - 新增页面 = 在共享清单加一项 + 在组件映射注册一个组件。
 - 【必须】不做动态 `import` 组件 (图省事会牺牲类型与构建确定性)。
 
+### URL 路由 (hash)
+
+页面切换后地址栏应体现当前页 (支持刷新复原、URL 直达、浏览器后退/前进)。约束: 自建前端是内嵌于宿主的**单文件 HTML**, 服务端页面路径固定 (`router.page` 注册一次), 真实路径子路由会在刷新/直达时 404——故【必须】用 **hash** (`#/<pageId>`, 如 `#/sessions`), 它是唯一客户端可控且不发往服务端的 URL 段。
+
+- 【必须】**URL 是当前页的唯一真相源**: 前端由一个 hook 独占页面状态 (读取 `location.hash` + 监听 `hashchange`), 不用 `useState` 另存一份, 以免状态与 URL 漂移 (后退后 state 未跟)。
+- 【必须】页面 id 直接复用 `PageMeta.id`; 解析【应该】宽容取 hash 首段 (忽略多余路径段/尾斜杠), 空或非法值回退 `DEFAULT_PAGE`。
+- 【必须】归一化与默认页补齐用 `history.replaceState` (不新增历史); 切页写 `location.hash` (自动压入历史, 后退键随之生效); 点击当前页 no-op, 避免污染历史栈。
+- 【必须】解析/序列化抽成**纯函数**并单测 (hash 解析与格式化是易错边角, 且 IO 部分不可纯测)。
+
 ### 插件身份注入
 
 插件 id 与显示名以 `package.json` 为唯一权威。自定义前端在**构建期**读取它并注入 (Vite `define` / HTML 变量替换), 用于替换原先硬编码的插件名与页面标题。运行时宿主注入的插件名 (如 `window.__PLUGIN_NAME__`) 仍应优先, 构建期注入只作兜底。
@@ -118,6 +127,7 @@ token 常量与解析纯函数 (`resolveDisplayContent`) 统一在共享包; 【
 
 - [ ] 【必须】共享清单: 加一项 `id` / `title` / `description` / `icon` / `order`
 - [ ] 【必须】前端: 在 `页 id → 组件` 映射注册对应组件
+- [ ] 【必须】确认 `id` 可作 hash 片段直达 (`#/<id>`), 无需改路由层
 
 ## 与其他范式的关系
 
@@ -127,4 +137,4 @@ token 常量与解析纯函数 (`resolveDisplayContent`) 统一在共享包; 【
 
 ## 参考实现
 
-本模板: 声明源与派生见 `packages/shared/src/config.ts` (`FIELDS` / `PluginConfig` / `COMMAND_PREFIX` / `getDefaultConfig` / `sanitizeConfig` / `parseStringList`) 与 `packages/shared/src/ui.ts` (`PAGES` / `DEFAULT_PAGE`); 展示块占位符见 `packages/shared/src/displayTokens.ts` (`resolveDisplayContent`); 后端映射 (含 scope 过滤与占位符解析) 见 `packages/plugin/src/config.ts` 的 `buildConfigSchema`; 前端渲染见 `packages/webui/src/components/ConfigForm.tsx` 与 `packages/webui/src/pages/StatusPage.tsx` (仪表盘页内嵌配置表单); 骨架消费见 `packages/webui/src/App.tsx` 与 `packages/webui/src/components/Sidebar.tsx`。
+本模板: 声明源与派生见 `packages/shared/src/config.ts` (`FIELDS` / `PluginConfig` / `COMMAND_PREFIX` / `getDefaultConfig` / `sanitizeConfig` / `parseStringList`) 与 `packages/shared/src/ui.ts` (`PAGES` / `DEFAULT_PAGE`); 展示块占位符见 `packages/shared/src/displayTokens.ts` (`resolveDisplayContent`); 后端映射 (含 scope 过滤与占位符解析) 见 `packages/plugin/src/config.ts` 的 `buildConfigSchema`; 前端渲染见 `packages/webui/src/components/ConfigForm.tsx` 与 `packages/webui/src/pages/StatusPage.tsx` (仪表盘页内嵌配置表单); 骨架消费见 `packages/webui/src/App.tsx` 与 `packages/webui/src/components/Sidebar.tsx`; URL 路由见 `packages/webui/src/hooks/usePageRoute.ts` (hook) 与 `packages/webui/src/utils/pageRoute.ts` (`parsePage` / `buildHash`)。

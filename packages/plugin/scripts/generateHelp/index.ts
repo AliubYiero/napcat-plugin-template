@@ -1,6 +1,8 @@
 /**
  * help:generate 命令入口
  * 通过 napcat-help-generate 服务端 API 生成帮助图片与文本, 并落盘到本插件:
+ * - 结构化数据: src/handlers/help/helpData.generated.ts (生成文件, 禁止手改;
+ *   汇总所有面板, 供 WebUI 帮助文档页消费, 不依赖渲染服务, 最先落盘)
  * - 图片: src/assets/{cmdId}-{Role}.png (覆盖写入)
  * - 文本: src/handlers/commands/helpText.generated.ts (生成文件, 禁止手改)
  *
@@ -273,6 +275,33 @@ async function fetchImages(
 
 // ---------- 落盘 ----------
 
+// 结构化帮助数据: 汇总所有面板, 供 WebUI 帮助文档页 (GET /help) 消费。
+// 不依赖渲染服务, 因此在联网生成图片/文本前先落盘, 渲染失败也不影响该数据。
+function writeHelpPanels(): void {
+    const helpDir = join(PLUGIN_ROOT, 'src/handlers/help');
+    mkdirSync(helpDir, { recursive: true });
+    const panels = CMD_TARGETS.map((target) => target.cmd);
+    const lines: string[] = [];
+    lines.push('/**');
+    lines.push(' * 由 pnpm run help:generate 生成, 禁止手改');
+    lines.push(' * cmd 权威源: scripts/generateHelp/cmds/');
+    lines.push(' * 供 WebUI 帮助文档页消费 (GET /help)');
+    lines.push(' */');
+    lines.push('');
+    lines.push("import type { Cmd } from 'shared';");
+    lines.push('');
+    lines.push(
+        '/** 全部帮助面板 (内容为各 cmds 权威源原样, 未经权限过滤) */',
+    );
+    lines.push(
+        `export const HELP_PANELS: Cmd[] = ${JSON.stringify(panels, null, 4)};`,
+    );
+    lines.push('');
+    const file = join(helpDir, 'helpData.generated.ts');
+    writeFileSync(file, lines.join('\n'));
+    console.log(`[help:generate] 写入 ${file}`);
+}
+
 function writeImages(cmdId: string, images: Map<Role, Buffer>): void {
     const assetsDir = join(PLUGIN_ROOT, 'src/assets');
     mkdirSync(assetsDir, { recursive: true });
@@ -321,6 +350,9 @@ function writeHelpText(
 // ---------- 主流程 ----------
 
 async function main(): Promise<void> {
+    // 结构化数据产出不依赖渲染服务, 先写, 保证服务不可用时 WebUI 数据仍可用
+    writeHelpPanels();
+
     const port = readGeneratorPort();
     const handle = await ensureServer(port);
 

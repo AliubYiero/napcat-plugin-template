@@ -3,7 +3,13 @@ import type { PluginConfig } from 'shared';
 
 export type {
     ApiResponse,
+    Cmd,
+    ContentHelp,
+    ContentHelpMethod,
+    Instruction,
+    InstructionSet,
     PluginConfig,
+    Role,
     SessionConfig,
     SessionConfigBase,
     SessionType,

@@ -18,6 +18,7 @@
 
 import type { NapCatPluginContext } from 'napcat-types/napcat-onebot/network/plugin/types';
 import { pluginState } from '../core/state';
+import { HELP_PANELS } from '../handlers/help/helpData.generated';
 import type { PluginConfig, SessionType } from '../types';
 import { sessionConfigService } from './session-config.service';
 
@@ -225,6 +226,13 @@ export function registerApiRoutes(ctx: NapCatPluginContext): void {
             ctx.logger.error('批量更新会话配置失败:', err);
             res.status(500).json({ code: -1, message: String(err) });
         }
+    });
+
+    // ==================== 帮助文档（无鉴权）====================
+
+    /** 获取全部帮助面板 (未做权限过滤, 等同于超级管理员视图) */
+    router.getNoAuth('/help', (_req, res) => {
+        res.json({ code: 0, data: HELP_PANELS });
     });
 
     // TODO: 在这里添加你的自定义 API 路由

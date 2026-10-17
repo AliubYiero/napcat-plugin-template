@@ -11,7 +11,11 @@
  */
 
 /** 侧栏图标名, 由 webui 的图标注册表解析为具体图标组件 */
-export type PageIconName = 'dashboard' | 'settings' | 'group';
+export type PageIconName =
+    | 'dashboard'
+    | 'settings'
+    | 'group'
+    | 'help';
 
 export interface PageMeta {
     /** 页面唯一标识, 同时是 webui 的 PageId */
@@ -43,6 +47,13 @@ export const PAGES = [
         description: '管理群聊与好友的启用与禁用',
         icon: 'group',
         order: 20,
+    },
+    {
+        id: 'help',
+        title: '帮助文档',
+        description: '查看插件支持的全部指令与使用说明',
+        icon: 'help',
+        order: 30,
     },
 ] as const satisfies readonly PageMeta[];
 

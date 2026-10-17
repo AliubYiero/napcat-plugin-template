@@ -84,8 +84,11 @@ interface Instruction {
 
 | 产物 | 落盘位置 | 说明 |
 |---|---|---|
+| 结构化面板数据 | `src/handlers/help/helpData.generated.ts` | 导出 `HELP_PANELS: Cmd[]` (各面板 cmd 配置原样, 未做权限过滤), 供 WebUI 帮助文档页渲染 |
 | 帮助图片 PNG | `src/assets/{cmdId}-{Role}.png` | 按权限组三张, 覆盖写入 |
 | 文本帮助 | `src/handlers/<模块>/helpText.generated.ts` | 导出 `HELP_TEXT_MAP: Record<HelpVariant, string>`, 键为 `user` / `admin` / `superAdmin` |
+
+【应该】除运行时产物外, 生成步骤应另行落盘一份**结构化面板数据** (各面板 cmd 配置原样), 作为 WebUI 帮助文档页的取数来源, 免去在前端重复维护帮助内容。该产物不依赖渲染服务, 应在联网生成图片/文本**之前**先写入, 以保证服务不可用时 WebUI 数据仍可用。
 
 【必须】**同步纪律**: 生成文件头部标注"由 xx 脚本生成, 禁止手改"。任何帮助内容变更都只修改权威源, 再重新生成。handler 以 `HELP_IMAGE` 常量声明各变体对应的 PNG 文件名 (纯命名映射, 无内容), 并 `import { HELP_TEXT_MAP } from './helpText.generated'`。
 
@@ -131,4 +134,4 @@ interface Instruction {
 
 napcat-plugin-bilibili-monitor 项目: 权威源与生成脚本位于插件项目 `scripts/generateHelp/` (cmd 配置、生成入口与 `CMD_TARGETS` 映射表), 运行时工具见 `src/utils/helpMessage.ts` 的 `sendHelpMessage` 与各模块 `help.handler.ts`; 图片渲染由独立项目 `napcat-help-generate` 提供 (TS + express + Playwright, 无状态渲染), 其 API 详见该项目 README 与 CLAUDE.md。
 
-本模板 (monorepo) 亦已落地该范式, 作为单面板样例: 权威源与生成脚本在 `packages/plugin/scripts/generateHelp/` (用法见该目录 `README.md`), 运行时工具在 `packages/plugin/src/utils/helpMessage.ts` (`sendHelpMessage` 复用分发层推导的 `UserRole`, 图片与文本回退均走 `sendReply`), handler 在 `packages/plugin/src/handlers/commands/help.handler.ts`; 生成产物为 `packages/plugin/src/assets/template-help-{User,Admin,SuperAdmin}.png` 与 `packages/plugin/src/handlers/commands/helpText.generated.ts`。
+本模板 (monorepo) 亦已落地该范式, 作为单面板样例: 权威源与生成脚本在 `packages/plugin/scripts/generateHelp/` (用法见该目录 `README.md`), 运行时工具在 `packages/plugin/src/utils/helpMessage.ts` (`sendHelpMessage` 复用分发层推导的 `UserRole`, 图片与文本回退均走 `sendReply`), handler 在 `packages/plugin/src/handlers/commands/help.handler.ts`; 生成产物为 `packages/plugin/src/handlers/help/helpData.generated.ts` (`HELP_PANELS`, 供 WebUI)、`packages/plugin/src/assets/template-help-{User,Admin,SuperAdmin}.png` 与 `packages/plugin/src/handlers/commands/helpText.generated.ts`。WebUI 帮助文档页为 `packages/webui/src/pages/HelpPage.tsx`, 经 `GET /help` 取 `HELP_PANELS` 渲染 (未做权限过滤, 等同超级管理员视图)。

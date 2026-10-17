@@ -536,3 +536,14 @@ select.input-field {
     background-repeat: no-repeat;
     background-position: right 8px center;
 }
+
+/* ========== Help 文档内联标记 ========== */
+/* 类名来自 cmds 内容文本 (ContentHelp 的 steps/name 支持内联 HTML),
+   必须在全局存在; 指令徽章亦复用 .cmd 外观。 */
+.cmd {
+    @apply inline-block font-mono text-xs px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-white/[0.06] text-gray-800 dark:text-gray-200;
+}
+
+.highlight {
+    @apply text-primary font-semibold;
+}

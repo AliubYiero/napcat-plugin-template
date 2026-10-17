@@ -4,6 +4,7 @@ import {
     IconDashboard,
     IconGithub,
     IconGroup,
+    IconHelp,
     IconPlugin,
     IconSettings,
 } from './icons';
@@ -21,6 +22,7 @@ const PAGE_ICONS: Record<
     dashboard: IconDashboard,
     settings: IconSettings,
     group: IconGroup,
+    help: IconHelp,
 };
 
 const menuItems = [...PAGE_LIST]

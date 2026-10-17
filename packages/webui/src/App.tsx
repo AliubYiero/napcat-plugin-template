@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import ToastContainer from './components/ToastContainer';
 import { useStatus } from './hooks/useStatus';
 import { useTheme } from './hooks/useTheme';
+import HelpPage from './pages/HelpPage';
 import SessionsPage from './pages/SessionsPage';
 import StatusPage from './pages/StatusPage';
 
@@ -30,6 +31,8 @@ function App() {
         switch (currentPage) {
             case 'sessions':
                 return <SessionsPage />;
+            case 'help':
+                return <HelpPage />;
             default:
                 return <StatusPage status={status} />;
         }

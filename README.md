@@ -63,14 +63,14 @@ napcat-plugin-template/
 ├── .github/
 │   ├── workflows/
 │   │   └── release.yml        # CI/CD 自动构建发布
-│   ├── prompt/
-│   │   ├── default.md             # 默认 Release Note 模板（回退用）
-│   │   └── ai-release-note.md     # （可选）AI Release Note 自定义 Prompt
-│   └── copilot-instructions.md  # Copilot 上下文说明
+│   └── prompt/
+│       ├── default.md             # 默认 Release Note 模板（回退用）
+│       └── ai-release-note.md     # （可选）AI Release Note 自定义 Prompt
 ├── package.json              # workspace 根（仅编排脚本）
 ├── pnpm-workspace.yaml
 ├── tsconfig.base.json        # 基础 TS 配置（各包 extends）
 ├── biome.json
+├── AGENTS.md                 # AI 编程代理指令（唯一权威）
 └── README.md
 ```
 
@@ -351,25 +351,19 @@ res.status(500).json({ code: -1, message: '错误描述' });
 
 ## 🤖 AI 辅助开发
 
-项目内置了 NapCat API 的 Apifox MCP Server 配置（`.vscode/mcp.json`），在 VS Code 中配合 AI 助手（如 GitHub Copilot）使用时，可以直接查询 NapCat 的完整 API 文档。
+本仓库在根目录提供 [`AGENTS.md`](./AGENTS.md) 作为 AI 编程代理的唯一指令来源：快速导航、仓库结构、构建 / 验证 / 部署命令、硬规则清单与高频代码片段。支持 AGENTS.md 的 AI 助手（如 opencode、Codex、Cursor 等）会自动读取该文件。
 
 ### 使用方式
 
-1. 使用 VS Code 打开本项目
-2. 确保已安装 [GitHub Copilot](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot) 扩展
-3. 打开 Copilot Chat，MCP Server 会自动启动
-4. 在对话中即可让 AI 查询 NapCat API 接口信息，例如：
-   - *"NapCat 有哪些发送消息的 API？"*
-   - *"获取群列表的接口参数是什么？"*
-   - *"帮我调用 send_group_msg 发送一条群消息"*
-
-> MCP 配置位于 `.vscode/mcp.json`，使用 `apifox-mcp-server` 连接 NapCat 的 API 文档站点，无需额外配置。
+1. 用支持 AGENTS.md 的 AI 助手打开本项目，代理会自动加载根目录的 `AGENTS.md`
+2. 结合 `docs/` 中的范式文档与 `CONTEXT.md` 领域术语进行开发
+3. 需要查询 OneBot 11 API 接口时，参见 [napcat.apifox.cn](https://napcat.apifox.cn/) 或 `.example/plugin/api/`
 
 ## 🚀 CI/CD 自动发布
 
-项目内置了两个 GitHub Actions 工作流：
+项目内置了自动构建发布工作流：
 
-### 1. 自动构建发布（`release.yml`）
+### 自动构建发布（`release.yml`）
 
 推送 `v*` 格式的 tag 即可自动构建并创建 GitHub Release。
 
@@ -404,49 +398,6 @@ git push origin v1.0.0
 **自定义 AI Prompt：** 创建 `.github/prompt/ai-release-note.md` 文件即可覆盖默认的 system prompt，支持 `{VERSION}` 占位符。
 
 > 💡 不配置任何 AI 相关的 Secret，发布流程与之前完全一致，无任何影响。
-
-### 2. 自动更新插件索引（`update-index.yml`）
-
-Release 发布后，会自动向 [napcat-plugin-index](https://github.com/NapNeko/napcat-plugin-index) 提交 PR 更新插件索引，**无需手动编辑 `plugins.v4.json`**。
-
-**完整流程：**
-
-```
-push tag → release.yml 构建发布 → update-index.yml 自动提交 PR → 索引仓库 CI 自动审核 → 维护者合并
-```
-
-**配置步骤：**
-
-1. **填写 `package.json` 中的插件元信息**（CI 会自动读取）：
-   ```json
-   {
-     "name": "napcat-plugin-your-name",
-     "plugin": "你的插件显示名",
-     "version": "1.0.0",
-     "description": "插件描述",
-     "author": "你的名字",
-     "napcat": {
-       "tags": ["工具"],
-       "minVersion": "4.14.0",
-       "homepage": "https://github.com/username/napcat-plugin-your-name"
-     }
-   }
-   ```
-
-   `napcat` 字段说明：
-
-   | 字段 | 说明 | 默认值 |
-   |------|------|--------|
-   | `tags` | 插件标签数组，用于分类 | `["工具"]` |
-   | `minVersion` | 支持的最低 NapCat 版本 | `"4.14.0"` |
-   | `homepage` | 插件主页 URL | 仓库地址 |
-
-2. **配置仓库 Secret**：在插件仓库 Settings > Secrets and variables > Actions 中添加：
-   - `INDEX_PAT`：一个有 `public_repo` 权限的 GitHub Personal Access Token，用于向索引仓库提交 PR
-
-3. **修改 `update-index.yml`**（可选）：如果索引仓库不是 `NapNeko/napcat-plugin-index`，修改 `INDEX_REPO` 环境变量
-
-> 💡 配置完成后，每次发布新版本只需 `git tag v1.x.x && git push origin v1.x.x`，一切自动完成！
 
 ## 📦 部署
 

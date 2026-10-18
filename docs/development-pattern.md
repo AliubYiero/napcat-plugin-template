@@ -30,7 +30,7 @@
 | [message-send-pattern.md](./message-send-pattern.md) | 消息发送: 发送工具收敛、消息段工厂 |
 | [help-output-pattern.md](./help-output-pattern.md) | 帮助输出: 权威源 → 生成 → 产物 → 运行时变体选择 |
 
-导航入口见 [index.md](./index.md)。命名与术语先读 `CONTEXT.md` (领域术语表, 含 _Avoid_ 反用词); 插件项目结构与运行方式见根目录 `CLAUDE.md`。写代码/起名前先查这两处。
+导航入口见 [index.md](./index.md)。命名与术语先读 `CONTEXT.md` (领域术语表, 含 _Avoid_ 反用词); 插件项目结构与运行方式见根目录 `AGENTS.md`。写代码/起名前先查这两处。
 
 ## 生命周期铁律
 

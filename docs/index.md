@@ -28,7 +28,7 @@ NapCat 插件开发模板的文档导航。范式体系的定位、强度分级�
 | 文档 | 覆盖范围 |
 | --- | --- |
 | `CONTEXT.md` (根目录) | 领域术语表 (含 _Avoid_ 反用词) 与默认值语义声明 |
-| `CLAUDE.md` (根目录) | 插件项目结构、构建运行方式、本项目实例化说明 |
+| `AGENTS.md` (根目录) | AI 编程代理指令: 快速导航、仓库结构、构建运行方式、硬规则清单与高频代码片段 |
 | `.example/` | NapCat 官方插件开发文档 (api/、mechanism.md、structure.md 等), 外部参考资料 |
 
 ## 新插件项目阅读顺序
@@ -39,4 +39,4 @@ NapCat 插件开发模板的文档导航。范式体系的定位、强度分级�
 4. **[config-pattern.md](./config-pattern.md)** 与 **[webui-config-pattern.md](./webui-config-pattern.md)** 与 **[instruction-pattern.md](./instruction-pattern.md)** — 配置的语义/清洗 (前者)、配置与 WebUI 的单源派生 (中者), 以及指令链路 (后者)。
 5. **[message-send-pattern.md](./message-send-pattern.md)** 与 **[help-output-pattern.md](./help-output-pattern.md)** — 横切能力, 写 handler 时随用随查。
 
-同时将本模板的 `CONTEXT.md` 与 `CLAUDE.md` 作为骨架复制到新项目, 再按新项目领域填充术语与实例。
+同时将本模板的 `CONTEXT.md` 与 `AGENTS.md` 作为骨架复制到新项目, 再按新项目领域填充术语与实例。

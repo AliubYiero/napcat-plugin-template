@@ -5,7 +5,7 @@
  *   (napcat-onebot/event/OneBotEvent.ts)。
  * 自持原因: 这是唯一以「值」形式使用的第三方类型; 改为自持后, 其余对
  *   napcat-types 的引用均为 `import type` (会被擦除), 因此可移除对该包的
- *   运行时与构建依赖。详见 CLAUDE.md「构建与验证」。
+ *   运行时与构建依赖。详见 AGENTS.md「构建 / 验证 / 部署」。
  */
 export enum EventType {
     META = 'meta_event',

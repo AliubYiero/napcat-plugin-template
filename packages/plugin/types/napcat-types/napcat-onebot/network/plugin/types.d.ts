@@ -6,7 +6,7 @@
  * 背景: napcat-types 只发布裸 .ts (零 .d.ts), 其源码不是可独立编译单元
  *   (依赖未发布的 napcat-protobuf、protobuf 类型被截断等), 直接引入会使 tsc
  *   深入第三方源码树并大量报错。故用 tsconfig `paths` 把 `napcat-types/*`
- *   重定向到本垫片, 让 typecheck 只检查项目自身代码 (见 CLAUDE.md「构建与验证」)。
+ *   重定向到本垫片, 让 typecheck 只检查项目自身代码 (见 AGENTS.md「构建 / 验证 / 部署」)。
  * 处理: 原文件对外部的相对 import 已替换为下方本地 `any` 别名 (stub 段)。
  * 更新: 升级 napcat-types 时, 请对照新版同名文件手动同步本文件。
  */

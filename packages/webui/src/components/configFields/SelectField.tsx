@@ -1,4 +1,5 @@
 import type { SelectFieldDescriptor } from 'shared';
+import SelectBox from './SelectBox';
 import type { ValueFieldProps } from './types';
 
 export default function SelectField({
@@ -7,34 +8,14 @@ export default function SelectField({
     onChange,
 }: ValueFieldProps<SelectFieldDescriptor, string | number>) {
     return (
-        <div>
-            <div className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">
-                {field.label}
-            </div>
-            {field.description && (
-                <div className="text-xs text-gray-400 mb-2">
-                    {field.description}
-                </div>
-            )}
-            <select
-                className="input-field"
-                value={String(value)}
-                onChange={(e) => {
-                    const option = field.options.find(
-                        (o) => String(o.value) === e.target.value,
-                    );
-                    if (option) onChange(option.value);
-                }}
-            >
-                {field.options.map((option) => (
-                    <option
-                        key={String(option.value)}
-                        value={String(option.value)}
-                    >
-                        {option.label}
-                    </option>
-                ))}
-            </select>
-        </div>
+        <SelectBox
+            label={field.label}
+            description={field.description}
+            options={field.options}
+            value={[value]}
+            onChange={(next) => {
+                if (next.length > 0) onChange(next[0]);
+            }}
+        />
     );
 }

@@ -1,12 +1,12 @@
 /**
- * `@机器人` CQ 段剥离的边界覆盖
+ * 指令触发判定的边界覆盖
  *
- * 范式: docs/instruction-pattern.md 的 "1.1 @机器人 CQ 段剥离"
+ * 范式: docs/instruction-pattern.md 的 "1.1 指令触发方式"
  */
 
 import { describe, expect, it } from 'vitest';
 import {
-    normalizeRawMessage,
+    resolveTriggerCommand,
     stripAtBotPrefix,
 } from '../src/utils/atBotPrefix';
 
@@ -85,29 +85,92 @@ describe('stripAtBotPrefix', () => {
     });
 });
 
-describe('normalizeRawMessage', () => {
-    it('开启时按 trim → 剥离 → trimStart 编排', () => {
+describe('resolveTriggerCommand', () => {
+    it('prefix: 以指令前缀开头时命中, 返回前缀后的参数文本', () => {
         expect(
-            normalizeRawMessage(
-                `  [CQ:at,qq=${SELF}]   #cmd ping  `,
-                SELF,
-                true,
-            ),
-        ).toBe('#cmd ping');
+            resolveTriggerCommand('#cmd ping', SELF, ['prefix']),
+        ).toBe(' ping');
+        expect(resolveTriggerCommand('#cmd', SELF, ['prefix'])).toBe(
+            '',
+        );
     });
 
-    it('未跟指令时仅剥离开头 at 段', () => {
+    it('prefix: 带 @机器人 的普通前缀消息不命中 (不以指令前缀开头)', () => {
         expect(
-            normalizeRawMessage(
-                `[CQ:at,qq=${SELF}] 在吗`,
+            resolveTriggerCommand(
+                `[CQ:at,qq=${SELF}] #cmd ping`,
                 SELF,
-                true,
+                ['prefix'],
             ),
-        ).toBe('在吗');
+        ).toBeNull();
     });
 
-    it('关闭时完全跳过规范化, rawMessage 原样返回', () => {
-        const raw = `  [CQ:at,qq=${SELF}] #cmd ping  `;
-        expect(normalizeRawMessage(raw, SELF, false)).toBe(raw);
+    it('atBot: 剥离 @机器人 后仍带前缀才命中', () => {
+        expect(
+            resolveTriggerCommand(
+                `[CQ:at,qq=${SELF}] #cmd ping`,
+                SELF,
+                ['atBot'],
+            ),
+        ).toBe(' ping');
+    });
+
+    it('atBot: 未带 @机器人 的普通前缀消息不命中 (严格独立)', () => {
+        expect(
+            resolveTriggerCommand('#cmd ping', SELF, ['atBot']),
+        ).toBeNull();
+    });
+
+    it('atBot: @机器人 后未跟指令不命中', () => {
+        expect(
+            resolveTriggerCommand(`[CQ:at,qq=${SELF}] 在吗`, SELF, [
+                'atBot',
+            ]),
+        ).toBeNull();
+    });
+
+    it('both: 两种形态都命中', () => {
+        expect(
+            resolveTriggerCommand('#cmd ping', SELF, [
+                'prefix',
+                'atBot',
+            ]),
+        ).toBe(' ping');
+        expect(
+            resolveTriggerCommand(
+                `[CQ:at,qq=${SELF}] #cmd ping`,
+                SELF,
+                ['prefix', 'atBot'],
+            ),
+        ).toBe(' ping');
+    });
+
+    it('none: 未启用任何触发方式时恒不命中', () => {
+        expect(
+            resolveTriggerCommand('#cmd ping', SELF, []),
+        ).toBeNull();
+        expect(
+            resolveTriggerCommand(
+                `[CQ:at,qq=${SELF}] #cmd ping`,
+                SELF,
+                [],
+            ),
+        ).toBeNull();
+    });
+
+    it('atBot: selfId 缺失时无法剥离, 不命中', () => {
+        expect(
+            resolveTriggerCommand(
+                `[CQ:at,qq=${SELF}] #cmd ping`,
+                '',
+                ['atBot'],
+            ),
+        ).toBeNull();
+    });
+
+    it('整体 trim 后再判定', () => {
+        expect(
+            resolveTriggerCommand('  #cmd ping  ', SELF, ['prefix']),
+        ).toBe(' ping');
     });
 });

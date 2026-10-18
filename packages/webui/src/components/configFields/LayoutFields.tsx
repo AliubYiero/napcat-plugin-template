@@ -1,4 +1,5 @@
 import {
+    DEFAULT_PAGE,
     type DisplayFieldDescriptor,
     resolveDisplayContent,
     type SectionFieldDescriptor,
@@ -11,7 +12,7 @@ export function SectionField({
     field: SectionFieldDescriptor;
 }) {
     return (
-        <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 pt-2">
+        <div className="text-xl font-semibold uppercase tracking-wider pt-2">
             {field.label}
         </div>
     );
@@ -28,6 +29,7 @@ export function DisplayField({
         pluginDisplayName: __PLUGIN_DISPLAY_NAME__,
         pluginDescription: '',
         extensionUrl: `/plugin/${__PLUGIN_ID__}/page/dashboard`,
+        extensionDashboardUrl: `/plugin/${__PLUGIN_ID__}/page/dashboard#/${DEFAULT_PAGE}`,
     });
     return (
         <div

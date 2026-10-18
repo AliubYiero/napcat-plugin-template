@@ -1,11 +1,13 @@
 /**
- * `@机器人` CQ 段剥离 (纯函数模块)
+ * `@机器人` 触发判定 (纯函数模块)
  *
- * 范式: docs/instruction-pattern.md 的 "1.1 @机器人 CQ 段剥离"
+ * 范式: docs/instruction-pattern.md 的 "1.1 指令触发方式"
  *
- * 本模块只负责剥离, 不负责整体 trim()、trimStart(), 也不产生日志副作用——
+ * 本模块只负责剥离与触发判定, 不负责整体 trim()、也不产生日志副作用——
  * 编排与日志由接收层 (handlers/messageHandler.ts) 承担。
  */
+
+import { COMMAND_PREFIX, type TriggerMode } from 'shared';
 
 /** 消息开头第一个 at CQ 段 (CQ 标记大小写不敏感, 属性部分整体捕获) */
 const LEADING_AT_SEGMENT = /^\[CQ:at,([^\]]*)\]/i;
@@ -52,21 +54,42 @@ export function stripAtBotPrefix(
 }
 
 /**
- * 接收层规范化编排: `trim()` → 剥离 at 段 → `trimStart()`
+ * 触发判定: 按启用的触发方式判断消息是否触发指令
  *
- * 【必须】`allowAtBotTrigger` 为 false 时**完全跳过规范化步骤**
- * (不整体 trim()、不剥离、不 trimStart()), `rawMessage` 原样进入前缀检查。
- * 此时 `[CQ:at,qq=...] #cmd` 会因不以 COMMAND_PREFIX 开头而静默返回。
+ * 两种触发方式**相互独立**:
+ * - `prefix`: 消息 `trim()` 后以 COMMAND_PREFIX 开头 (指令 参数);
+ * - `atBot`:  消息 `trim()` 后剥离开头匹配 selfId 的 at 段, 且剥离结果
+ *   `trimStart()` 后以 COMMAND_PREFIX 开头 (@机器人 指令 参数)。
+ *
+ * 命中返回**前缀之后的参数文本** (可能为空串; 未 trim, 由接收层切词),
+ * 都未命中返回 `null`。两者都未启用时恒返回 `null` (任何消息都不触发)。
+ * 只启用 `atBot` 时, 不含 @机器人 的普通前缀消息不触发。
  *
  * @param rawMessage 原始消息文本
- * @param selfId 机器人自身 QQ 号
- * @param allowAtBotTrigger 是否允许 @机器人 触发 (读自配置)
+ * @param selfId 机器人自身 QQ 号 (取自 PluginState.selfId, 不硬编码)
+ * @param modes 已启用的触发方式
  */
-export function normalizeRawMessage(
+export function resolveTriggerCommand(
     rawMessage: string,
     selfId: string,
-    allowAtBotTrigger: boolean,
-): string {
-    if (!allowAtBotTrigger) return rawMessage;
-    return stripAtBotPrefix(rawMessage.trim(), selfId).trimStart();
+    modes: readonly TriggerMode[],
+): string | null {
+    const prefix = COMMAND_PREFIX;
+    const trimmed = rawMessage.trim();
+
+    if (modes.includes('prefix') && trimmed.startsWith(prefix)) {
+        return trimmed.slice(prefix.length);
+    }
+
+    if (modes.includes('atBot')) {
+        const stripped = stripAtBotPrefix(trimmed, selfId);
+        if (stripped !== trimmed) {
+            const rest = stripped.trimStart();
+            if (rest.startsWith(prefix)) {
+                return rest.slice(prefix.length);
+            }
+        }
+    }
+
+    return null;
 }

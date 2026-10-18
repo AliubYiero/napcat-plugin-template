@@ -252,6 +252,29 @@ export function IconCheck({
     );
 }
 
+/** 展开/收起箭头 (下拉触发器的指示箭头) */
+export function IconChevronDown({
+    size,
+    className,
+}: IconProps = defaultProps) {
+    return (
+        <svg
+            aria-hidden="true"
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <polyline points="6 9 12 15 18 9" />
+        </svg>
+    );
+}
+
 /** X 关闭 */
 export function IconX({ size, className }: IconProps = defaultProps) {
     return (

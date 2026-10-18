@@ -14,6 +14,9 @@ import type {
 } from 'napcat-types/napcat-onebot/network/plugin/types';
 import type { ConfigField, DisplayTokenValues } from 'shared';
 import {
+    buildPasswordPanelHint,
+    DEFAULT_PAGE,
+    escapeHtml,
     FIELDS,
     getDefaultConfig,
     resolveDisplayContent,
@@ -42,16 +45,15 @@ export const DEFAULT_CONFIG: PluginConfig = getDefaultConfig();
  *   - html(content) / plainText(content)                        → 纯展示, 不保存值
  *   - combine(...items)                                         → 合并为 Schema
  *
- * 【例外】`password` kind 是 webui-only: 原生面板无密码控件, 故一律不在此渲染
- *   (见下方 filter), 只在自建前端出现。
+ * 【例外】`password` 原生面板无密码控件: `scope` 为 `webui` 时本就不渲染
+ *   (见下方 filter), `scope` 为 `both` 时改为渲染跳转引导块 (见 toNapCatItem)。
  */
 export function buildConfigSchema(
     ctx: NapCatPluginContext,
 ): PluginConfigSchema {
     const values = getDisplayTokenValues(ctx);
     const items = FIELDS_ALL.filter(
-        (field) =>
-            field.scope !== 'webui' && field.kind !== 'password',
+        (field) => field.scope !== 'webui',
     ).map((field) => toNapCatItem(ctx, field, values));
     return ctx.NapCatConfig.combine(...items);
 }
@@ -90,6 +92,7 @@ function getDisplayTokenValues(
         pluginDescription:
             pkg?.description ?? info?.description ?? '',
         extensionUrl: `/plugin/${ctx.pluginName}/page/dashboard`,
+        extensionDashboardUrl: `/plugin/${ctx.pluginName}/page/dashboard#/${DEFAULT_PAGE}`,
     };
 }
 
@@ -127,13 +130,16 @@ function toNapCatItem(
                 field.description,
             );
         case 'password':
-            // webui-only kind: 正常已被 buildConfigSchema 过滤, 不应到达;
-            // 保留兜底以维持 switch 穷尽 (原生面板无密码控件, 降级为明文文本)。
-            return NapCatConfig.text(
-                field.key,
-                field.label,
-                field.default,
-                field.description,
+            // 原生面板无密码控件: 渲染跳转引导块 (不落值), 引导用户去自建前端修改。
+            // scope 为 webui 时已被 buildConfigSchema 过滤, 不会到达。
+            return NapCatConfig.html(
+                resolveDisplayContent(
+                    buildPasswordPanelHint(
+                        field.label,
+                        field.description,
+                    ),
+                    values,
+                ),
             );
         case 'number':
             return NapCatConfig.number(
@@ -167,8 +173,10 @@ function toNapCatItem(
                 field.description,
             );
         case 'section':
-            // 仅布局: 分组标题
-            return NapCatConfig.plainText(field.label);
+            // 仅布局: 分组标题 (加粗, 与面板其它标题层级一致)
+            return NapCatConfig.html(
+                `<div class="font-semibold">${escapeHtml(field.label)}</div>`,
+            );
         case 'display':
             // 解析 {{...}} 占位符后再交给原生面板渲染
             return NapCatConfig.html(

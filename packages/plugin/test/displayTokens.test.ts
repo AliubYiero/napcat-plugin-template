@@ -6,6 +6,8 @@
  */
 
 import {
+    buildPasswordPanelHint,
+    EXTENSION_DASHBOARD_URL_TOKEN,
     EXTENSION_URL_TOKEN,
     escapeHtml,
     PLUGIN_DESCRIPTION_TOKEN,
@@ -49,6 +51,39 @@ describe('resolveDisplayContent', () => {
         expect(resolveDisplayContent('<div>hi</div>', {})).toBe(
             '<div>hi</div>',
         );
+    });
+
+    it('解析仪表盘地址占位符', () => {
+        const out = resolveDisplayContent(
+            `<a href="${EXTENSION_DASHBOARD_URL_TOKEN}">go</a>`,
+            {
+                extensionDashboardUrl:
+                    '/plugin/x/page/dashboard#/status',
+            },
+        );
+        expect(out).toBe(
+            '<a href="/plugin/x/page/dashboard#/status">go</a>',
+        );
+        expect(out).not.toContain('{{');
+    });
+});
+
+describe('buildPasswordPanelHint', () => {
+    it('包含 label、引导文案与仪表盘地址占位符, label 经转义', () => {
+        const hint = buildPasswordPanelHint(
+            'API <Key>',
+            '用于外部调用',
+        );
+        expect(hint).toContain('API &lt;Key&gt;');
+        expect(hint).toContain('用于外部调用');
+        expect(hint).toContain(EXTENSION_DASHBOARD_URL_TOKEN);
+        expect(hint).toContain('前往拓展页面');
+    });
+
+    it('无 description 时不渲染描述行', () => {
+        const hint = buildPasswordPanelHint('密钥');
+        expect(hint).toContain('密钥');
+        expect(hint).not.toContain('description');
     });
 });
 

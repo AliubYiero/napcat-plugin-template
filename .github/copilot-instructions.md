@@ -286,7 +286,7 @@ import { EventType } from 'napcat-types/napcat-onebot/event/index';
 import { pluginState } from '../core/state';
 
 // 通过单例访问配置
-const allowAtBot = pluginState.config.allowAtBotTrigger;
+const triggerModes = pluginState.config.triggerModes;
 
 // 通过单例访问日志器（等价于 ctx.logger）
 pluginState.logger.info('处理消息');

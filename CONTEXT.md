@@ -27,7 +27,7 @@ _Avoid_: 当成"字段是否生效的开关"——它不控制字段是否被保
 ### 展示块占位符 (display token)
 
 `display` 字段 `content` 里以 `{{...}}` 声明的动态值 (插件显示名 / 描述 / 拓展页地址), 由前后端各自解析 (后端用 ctx 插件信息, 前端用构建期注入身份)。**未命中回退空串, 注入值做 HTML 转义**。常量与解析纯函数见 `packages/shared/src/displayTokens.ts`。
-_Avoid_: "模板引擎"——它只是固定三个 token 的字符串替换, 不是一个通用模板系统。
+_Avoid_: "模板引擎"——它只是固定若干 token 的字符串替换, 不是一个通用模板系统。
 
 ### 指令定义 (InstructionDefinition)
 
@@ -44,10 +44,10 @@ _Avoid_: "权限配置""用户等级"——角色不是配置项, 也没有等�
 机器人自身在某个群内的角色 (`owner` / `admin` / `member`)。**不在消息事件里**, 只能通过 `get_group_member_info` 查 `pluginState.selfId` 得到; 与 `角色推导` (发起人) 并列, `isBotAdmin` 是它的布尔化判定 (owner/admin), 失败即拒 (fail-closed)。
 _Avoid_: "机器人权限""机器人白名单"——它是运行时查到的平台身份事实, 不是配置项; 且 @全体成员 的机器人资格以 `can_at_all` 为准, 本判定不作替代。
 
-### `@机器人` 剥离 (at-bot strip)
+### 指令触发方式 (triggerModes)
 
-接收层在切词前剥掉消息开头**第一个**匹配 `selfId` 的 at CQ 段, 使 `@机器人 + 前缀指令` 可触发。默认开启 (`allowAtBotTrigger`), 其余 at 段保留不动; 剥离后执行 `trimStart()`, 避免前导空格导致前缀检查失败。
-_Avoid_: "清理 at 段""替换 @"——不是把 at 段换成文本, 而是整段删除且只删开头一段。
+配置项 `triggerModes` (多选, 仅自建前端可配) 声明哪些消息形态可触发指令: `prefix` (指令 参数, 以 `COMMAND_PREFIX` 开头) 与 `atBot` (@机器人 指令 参数, 先剥掉消息开头**第一个**匹配 `selfId` 的 at CQ 段再检查前缀)。两者**相互独立**; 空数组表示任何消息都不触发。
+_Avoid_: "开启/关闭 @机器人"——触发方式是可选集合, 不是一个开关; at 剥离只是 `atBot` 形态的内部步骤 (其余 at 段保留不动, 剥离后 `trimStart()`)。
 
 ### 分发判定 (DispatchDecision)
 
@@ -79,8 +79,8 @@ _Avoid_: 把"权限档位"直接当"帮助版本"用——两者计数相同但�
 - 插件级全局启停: **交 NapCat 宿主** (`setPluginStatus`)。插件配置文件**不含** `enabled` 之类全局开关, 避免与宿主状态形成两个真相源。
 - 会话级启用开关: **默认关闭** (严格 `enabled === true`, 缺失即禁用)。新群/新好友须在 WebUI 的会话管理页显式开启。
 - 指令前缀: **固定为 `#cmd`** (`COMMAND_PREFIX`, 插件内部常量, 不暴露给用户修改)。
-- `@机器人` 触发剥离开关 (`allowAtBotTrigger`): **默认开启**。`@机器人 + 指令` 是群聊中的自然触发方式, 关闭后仅前缀指令可触发。
-  ⚠️ 默认开启意味着**行为变更**: 以前静默的 `[CQ:at,qq=机器人] #指令` 会开始触发指令, 插件作者应在更新说明中告知用户。
+- 指令触发方式 (`triggerModes`): 默认**全选** (`['prefix', 'atBot']`), 等价旧的 `allowAtBotTrigger = true`。`prefix` 识别 `#cmd ...`, `atBot` 识别 `@机器人 #cmd ...`; 两者相互独立, 清空则任何消息都不触发。
+  ⚠️ 由 boolean 改为多选是**行为可变更**: 用户可只勾 `atBot` 实现"仅被 @ 时响应", 或全不勾选完全停用触发。
 - 超级管理员名单 (`adminUsers`): 默认**空数组** (无人是超管)。该字段无启用/关闭语义, 不适用宽松判定。
 
 新增有默认值语义的配置项时, 在此处声明选择及理由; 难逆转的补 ADR (判据见 [docs/development-pattern.md](docs/development-pattern.md) 的"ADR 纪律")。

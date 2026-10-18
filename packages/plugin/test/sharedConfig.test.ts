@@ -15,7 +15,16 @@ import {
 } from 'shared';
 import { describe, expect, it } from 'vitest';
 
-const EXPECTED_KEYS = ['allowAtBotTrigger', 'adminUsers'];
+const EXPECTED_KEYS = [
+    'adminUsers',
+    'triggerModes',
+    'exampleBoolean',
+    'exampleText',
+    'examplePassword',
+    'exampleNumber',
+    'exampleSelect',
+    'exampleMultiSelect',
+];
 
 type ValueField = Extract<(typeof FIELDS)[number], { key: string }>;
 
@@ -58,6 +67,16 @@ describe('FIELDS 声明源', () => {
             }
         }
     });
+
+    it('password 字段的 scope 只允许 webui / both', () => {
+        for (const field of FIELDS_ALL) {
+            if (!('key' in field)) continue;
+            if (field.kind !== 'password') continue;
+            if (field.scope) {
+                expect(['webui', 'both']).toContain(field.scope);
+            }
+        }
+    });
 });
 
 describe('getDefaultConfig: 从 FIELDS 派生', () => {
@@ -65,11 +84,18 @@ describe('getDefaultConfig: 从 FIELDS 派生', () => {
         const a = getDefaultConfig();
         const b = getDefaultConfig();
         expect(a).toEqual({
-            allowAtBotTrigger: true,
             adminUsers: [],
+            triggerModes: ['prefix', 'atBot'],
+            exampleBoolean: false,
+            exampleText: '',
+            examplePassword: '',
+            exampleNumber: 10,
+            exampleSelect: 'a',
+            exampleMultiSelect: ['a'],
         });
         expect(a).not.toBe(b);
         expect(a.adminUsers).not.toBe(b.adminUsers);
+        expect(a.triggerModes).not.toBe(b.triggerModes);
     });
 });
 
@@ -106,8 +132,7 @@ describe('sanitizeConfig: 从 kind 派生 (代表用例)', () => {
 
     it('boolean: 显式 false 是语义, 不回退默认', () => {
         expect(
-            sanitizeConfig({ allowAtBotTrigger: false })
-                .allowAtBotTrigger,
+            sanitizeConfig({ exampleBoolean: false }).exampleBoolean,
         ).toBe(false);
     });
 

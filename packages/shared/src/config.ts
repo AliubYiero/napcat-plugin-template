@@ -31,18 +31,20 @@ export interface ConfigOption {
 /**
  * 有值字段的 kind: 每类对应一条清洗规则、一个后端控件、一个前端控件。
  *
- * | kind          | 清洗                       | 后端控件     | 前端控件     |
- * | ------------- | -------------------------- | ------------ | ------------ |
- * | boolean       | typeof 守卫, 回退默认      | 开关         | 开关         |
- * | text          | typeof 守卫, 回退默认      | 文本框       | 文本框       |
- * | password      | 同 text (typeof 守卫)      | (不渲染)     | 密码框       |
- * | number        | typeof + 区间, 回退默认    | 数字框       | 数字框       |
- * | select        | 必须命中 options, 否则默认 | 下拉单选     | 下拉单选     |
- * | multiSelect   | 过滤非法值, 空数组合法     | 下拉多选     | 复选         |
- * | stringList    | 逗号串/数组 → 去空项数组   | 逗号文本框   | 逗号文本框   |
+ * | kind          | 清洗                       | 后端控件        | 前端控件     |
+ * | ------------- | -------------------------- | --------------- | ------------ |
+ * | boolean       | typeof 守卫, 回退默认      | 开关            | 开关         |
+ * | text          | typeof 守卫, 回退默认      | 文本框          | 文本框       |
+ * | password      | 同 text (typeof 守卫)      | 跳转引导 (见下) | 密码框       |
+ * | number        | typeof + 区间, 回退默认    | 数字框          | 数字框       |
+ * | select        | 必须命中 options, 否则默认 | 下拉单选        | 下拉单选     |
+ * | multiSelect   | 过滤非法值, 空数组合法     | 下拉多选        | 复选         |
+ * | stringList    | 逗号串/数组 → 去空项数组   | 逗号文本框      | 逗号文本框   |
  *
- * 【例外】`password` 是唯一的 webui-only kind: 原生面板无密码控件, 故该 kind 一律
- *   不在原生面板渲染 (见 plugin 的 buildConfigSchema), 只在自建前端出现。
+ * 【例外】`password` 原生面板无密码控件, 故其 `scope` 收窄为 `webui` / `both`:
+ *   - `webui`: 仅在自建前端渲染密码框, 原生面板隐藏;
+ *   - `both` (缺省): 自建前端渲染密码框, 原生面板渲染"前往拓展页面修改"的引导块
+ *     (由 buildPasswordPanelHint 生成, 见 displayTokens), 不在面板落值。
  * 【警告】密钥明文落盘 (config.json) 并明文往返自建前端, 仅适用于对安全性要求不高的场景。
  */
 export type ValueFieldKind =
@@ -88,14 +90,18 @@ export interface TextFieldDescriptor extends FieldBase {
 }
 
 /**
- * 密码字段 (webui-only)
+ * 密码字段 (scope 只接受 webui / both)
  *
- * 语义与 `text` 一致 (清洗/落盘/默认值形态相同), 差别仅在前端渲染为密码框。
- * 【例外】原生面板无密码控件, 本 kind 一律不在原生面板渲染 (见 plugin 的 buildConfigSchema)。
+ * 语义与 `text` 一致 (清洗/落盘/默认值形态相同), 差别在前端渲染为密码框。
+ * 【例外】原生面板无密码控件, 故 scope 收窄为 `webui` / `both`:
+ *   - `webui`: 仅自建前端显示密码框;
+ *   - `both` (缺省): 自建前端显示密码框, 原生面板显示"前往拓展页面修改"的引导块。
  * 【警告】不脱敏: 密钥明文落盘并明文往返自建前端, 仅适用于安全性要求不高的场景。
  */
 export interface PasswordFieldDescriptor extends FieldBase {
     kind: 'password';
+    /** 【例外】password 不支持 `panel`; 缺省为 both */
+    scope?: 'webui' | 'both';
     default: string;
     placeholder?: string;
 }
@@ -182,19 +188,56 @@ export const COMMAND_PREFIX = '#cmd';
  */
 export interface PluginConfig {
     /**
-     * 是否允许 `@机器人 + 前缀指令` 触发，默认开启。
-     * 关闭后仅识别以 COMMAND_PREFIX 开头的消息。
-     */
-    allowAtBotTrigger: boolean;
-    /**
      * 超级管理员 QQ 号名单（四档角色中唯一需要人工配置的档位）。
      * WebUI 中以英文逗号分隔输入，清洗后始终是数组。
      */
     adminUsers: string[];
+    /**
+     * 指令触发方式（多选，仅自建前端可配）：`prefix` 识别以 COMMAND_PREFIX
+     * 开头的消息，`atBot` 识别 `@机器人 + 前缀指令`。两者相互独立；
+     * 空数组表示任何消息都不触发。
+     */
+    triggerModes: TriggerMode[];
+
+    // ==== 示例字段: 演示各 kind, 开新项目时请连同 PluginConfig 键一并删除 ====
+    /** boolean 示例 */
+    exampleBoolean: boolean;
+    /** text 示例 */
+    exampleText: string;
+    /** password 示例 (原生面板显示跳转引导) */
+    examplePassword: string;
+    /** number 示例 */
+    exampleNumber: number;
+    /** select 示例 */
+    exampleSelect: string;
+    /** multiSelect 示例 */
+    exampleMultiSelect: string[];
     // TODO: 在这里添加你的插件配置项 (同时在 FIELDS 添加同 key 描述符)
 }
 
 // ==================== 字段声明 ====================
+
+/**
+ * 指令触发方式
+ *
+ * `prefix`: 消息以 COMMAND_PREFIX 开头 (指令 参数);
+ * `atBot`:  消息以 `@机器人` 开头, 剥离后仍带前缀 (@机器人 指令 参数)。
+ * 两者相互独立, 可选择其一、两者或都不选 (都不选即任何消息都不触发)。
+ */
+export type TriggerMode = 'prefix' | 'atBot';
+
+/** 指令触发方式候选项 (与 TriggerMode 同源) */
+export const TRIGGER_MODE_OPTIONS: readonly ConfigOption[] = [
+    { label: '指令 参数', value: 'prefix' },
+    { label: '@机器人 指令 参数', value: 'atBot' },
+];
+
+/** 示例字段的候选项 (select / multiSelect 共用, 演示"候选值抽常量") */
+const EXAMPLE_OPTIONS: readonly ConfigOption[] = [
+    { label: '选项 A', value: 'a' },
+    { label: '选项 B', value: 'b' },
+    { label: '选项 C', value: 'c' },
+];
 
 /**
  * 配置字段声明 (唯一权威)
@@ -220,22 +263,82 @@ export const FIELDS = [
 </div>`,
     },
     {
-        key: 'allowAtBotTrigger',
-        kind: 'boolean',
-        label: '@机器人 触发',
-        description: '开启后 @机器人 + 前缀指令也可触发',
-        default: true,
-    },
-    {
         key: 'adminUsers',
         kind: 'stringList',
         label: '超级管理员 QQ',
         description: '多个 QQ 号用英文逗号分隔；超管不受会话类型限制',
         default: [],
     },
+    {
+        key: 'triggerModes',
+        kind: 'multiSelect',
+        label: '指令触发方式',
+        description:
+            '选择可触发指令的消息形态；全不勾选则任何消息都不触发',
+        scope: 'webui',
+        options: TRIGGER_MODE_OPTIONS,
+        default: ['prefix', 'atBot'],
+    },
     // TODO: 在这里添加你的配置项
     // 可选 kind: boolean / text / password / number / select / multiSelect / stringList
     //            section (分组标题) / display (纯展示, content 为 HTML)
+
+    // ==== 示例字段: 演示各 kind, 开新项目时请整段删除 (含 PluginConfig 对应键) ====
+    {
+        kind: 'section',
+        label: '示例字段（演示各 kind，开新项目后请删除）',
+    },
+    {
+        key: 'exampleBoolean',
+        kind: 'boolean',
+        label: '示例开关',
+        description: 'boolean 类型：开 / 关',
+        default: false,
+    },
+    {
+        key: 'exampleText',
+        kind: 'text',
+        label: '示例文本',
+        description: 'text 类型：单行文本输入',
+        default: '',
+        placeholder: '请输入文本',
+    },
+    {
+        key: 'examplePassword',
+        kind: 'password',
+        label: '示例密钥',
+        description:
+            'password 类型：自建前端显示密码框，原生面板显示跳转引导',
+        scope: 'both',
+        default: '',
+        placeholder: '请输入密钥',
+    },
+    {
+        key: 'exampleNumber',
+        kind: 'number',
+        label: '示例数值',
+        description: 'number 类型：区间 0–100',
+        default: 10,
+        min: 0,
+        max: 100,
+        step: 1,
+    },
+    {
+        key: 'exampleSelect',
+        kind: 'select',
+        label: '示例单选',
+        description: 'select 类型：从候选中单选',
+        default: 'a',
+        options: EXAMPLE_OPTIONS,
+    },
+    {
+        key: 'exampleMultiSelect',
+        kind: 'multiSelect',
+        label: '示例多选',
+        description: 'multiSelect 类型：可多选，空数组合法',
+        default: ['a'],
+        options: EXAMPLE_OPTIONS,
+    },
 ] as const satisfies readonly ConfigField[];
 
 // 编译期断言: FIELDS 的有值字段键集与 PluginConfig 键集完全一致 (编辑器可见)

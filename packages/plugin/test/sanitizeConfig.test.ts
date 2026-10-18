@@ -21,7 +21,7 @@ describe('sanitizeConfig: 输入整体非法', () => {
     it('清洗不抛错, 损坏配置下仍能启动', () => {
         expect(() =>
             sanitizeConfig({
-                allowAtBotTrigger: null,
+                triggerModes: 123,
                 adminUsers: { foo: 1 },
             }),
         ).not.toThrow();
@@ -30,19 +30,36 @@ describe('sanitizeConfig: 输入整体非法', () => {
 
 describe('sanitizeConfig: 标量', () => {
     it('类型不符时保留默认值', () => {
-        const out = sanitizeConfig({
-            allowAtBotTrigger: 'no',
-        });
-        expect(out.allowAtBotTrigger).toBe(
-            DEFAULT_CONFIG.allowAtBotTrigger,
+        const out = sanitizeConfig({ exampleBoolean: 'no' });
+        expect(out.exampleBoolean).toBe(
+            DEFAULT_CONFIG.exampleBoolean,
         );
     });
 
     it('类型正确时采纳外部值', () => {
-        const out = sanitizeConfig({
-            allowAtBotTrigger: false,
-        });
-        expect(out.allowAtBotTrigger).toBe(false);
+        const out = sanitizeConfig({ exampleBoolean: true });
+        expect(out.exampleBoolean).toBe(true);
+    });
+});
+
+describe('sanitizeConfig: 多选 (指令触发方式)', () => {
+    it('非数组输入回退默认', () => {
+        expect(
+            sanitizeConfig({ triggerModes: 'prefix' }).triggerModes,
+        ).toEqual(DEFAULT_CONFIG.triggerModes);
+    });
+
+    it('过滤非法值', () => {
+        expect(
+            sanitizeConfig({ triggerModes: ['prefix', 'bogus'] })
+                .triggerModes,
+        ).toEqual(['prefix']);
+    });
+
+    it('空数组是合法语义, 不回退默认', () => {
+        expect(
+            sanitizeConfig({ triggerModes: [] }).triggerModes,
+        ).toEqual([]);
     });
 });
 

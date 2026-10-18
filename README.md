@@ -21,9 +21,9 @@ napcat-plugin-template/
 │   │       │   ├── state.ts          # 全局状态管理单例 + 配置清洗
 │   │       │   └── admin.ts          # 权限模块：四档角色推导与线性比较
 │   │       ├── utils/
-│   │       │   └── atBotPrefix.ts    # @机器人 CQ 段剥离（纯函数）
+│   │       │   └── atBotPrefix.ts    # 指令触发判定 + @机器人 CQ 段剥离（纯函数）
 │   │       ├── handlers/
-│   │       │   ├── messageHandler.ts       # 接收层：会话启用 → 规范化 → 前缀 → 切词 → 分发
+│   │       │   ├── messageHandler.ts       # 接收层：会话启用 → 触发判定 → 切词 → 分发
 │   │       │   ├── instructionRegistry.ts  # 指令注册表（两级命名空间）
 │   │       │   ├── instructionDispatch.ts  # 分发层：统一校验、失败反馈不对称
 │   │       │   ├── utils.ts                # 发送工具 + 消息段工厂

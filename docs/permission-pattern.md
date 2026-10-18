@@ -162,7 +162,7 @@ export function hasRole(userRole: UserRole, required: UserRole['role']): boolean
 
 `superAdmin` 是四档中唯一需要人工配置的档位, 配置面刻意最小化:
 
-- 【应该】**配置载体**: 插件配置项 `adminUsers` (`string[]`)。WebUI 中以文本输入呈现, 多个 QQ 号用英文逗号分隔; 配置文件中直接存数组。
+- 【应该】**配置载体**: 插件配置项 `adminUsers` (`string[]`)。WebUI 中以标签输入呈现 (胶囊可增删); 配置文件中直接存数组。
 - 【必须】**解析时机: 清洗而非使用**。字符串 → 数组的解析 (`split(',')` → `trim()` → 剔除空段) 在 `sanitizeConfig` 中**一次性完成** (见 [config-pattern](./config-pattern.md) 的字符串列表规则), 运行期始终是干净的 `string[]`。使用方 (权限判断、批量通知) 直接读数组, **不重复解析字符串**。
 - 【必须】**判断逻辑**: `isSuperAdmin(qq)` 做数组包含检查, 在 `getUserRole` 中**最先**短路判定——超管身份高于一切会话类型推导, 群聊里的超管与私聊里的超管都是 `superAdmin`。
 - 【必须】**无删除手段**: 名单中不存在"降权"指令, 移除超管 = 从配置中删去其 QQ 号。这一档位设计上就不接受来自消息侧的变更 (防止超管被指令篡改)。

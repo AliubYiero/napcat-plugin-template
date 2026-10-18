@@ -100,10 +100,15 @@ describe('getDefaultConfig: 从 FIELDS 派生', () => {
 });
 
 describe('parseStringList codec', () => {
-    it('逗号分隔 → 去空白去空项', () => {
+    it('逗号 / 换行分隔 → 去空白去空项', () => {
         expect(parseStringList(' 10001 , 10002 ,, ')).toEqual([
             '10001',
             '10002',
+        ]);
+        expect(parseStringList('10001\n10002\r\n10003')).toEqual([
+            '10001',
+            '10002',
+            '10003',
         ]);
         expect(parseStringList(',,,')).toEqual([]);
     });

@@ -18,7 +18,7 @@ NapCat 插件开发模板 (pnpm monorepo), 基于实际生产项目架构提炼�
 ## 构建与验证
 
 - `pnpm build` (根) — 构建 plugin 与 webui (vite, 含资源复制)。**纯构建**: 热部署插件只在 `--mode deploy` / `--mode deploy-dev` 下挂载, 因此 build 不连调试服务。
-- `pnpm run test` (根, 即 `pnpm -r test`) — plugin 与 webui 的 vitest 单测 (`packages/plugin/test/`、`packages/webui/test/`), 覆盖范式里的纯函数模块。
+- `pnpm run test` (根, 即 `pnpm -r test`) — plugin 与 webui 的 vitest 单测 (`packages/plugin/test/`、`packages/webui/test/`), 覆盖范式里的纯函数模块与 configFields 组件行为。`packages/webui/test/` 按 `src/` 镜像布局, 组件用例经 `test/setup.ts` 统一挂 jest-dom 与清理, 构建期插件身份由 `vitest.config.ts` 注入; 未覆盖: 页面 (除 `HelpPage`)、壳组件、`api.ts`、`useToast`。
 - `pnpm run deploy` — 热部署链路 (构建后自动复制到远程并重载), 需 NapCat 端启用 `napcat-plugin-debug`。
 - `pnpm run deploy:dev` — dev 部署 (`--mode deploy-dev`): 生成 `dist/package.json` 时把 `name`/`plugin`/`version` 改写为 `-dev` / `[DEV] ` 标注, 以**新 id** 注册为独立插件, 不覆盖远程正在运行的正式插件 (配置与数据目录按 id 隔离); 内嵌 WebUI 仍按正式身份构建。
 - 验证以 **vite build** 与 **vitest** 为准; 类型校验走 `pnpm typecheck` (根, 即 `pnpm -r typecheck`), 或 `pnpm check` (= typecheck + test)。

@@ -123,6 +123,7 @@ token 常量与解析纯函数 (`resolveDisplayContent`) 统一在共享包; 【
 - [ ] 【应该】枚举类字段: 候选值抽常量, 描述符与清洗共用同一来源
 - [ ] 【应该】若字段只需在某一个界面出现: 声明 `scope` (`webui` / `panel`)
 - [ ] 【必须】确认 `satisfies` 与键集单测通过 (无需改后端映射与前端表单)
+- [ ] 【应该】新增 / 改动字段控件: 在 `packages/webui/test/components/configFields/` 补一条组件行为测试 (范式样本)
 - [ ] 【应该】若语义有默认值选择 (尤其启用开关): 在 `CONTEXT.md` 声明, 必要时补 ADR
 
 ### 新增一个 WebUI 页面
@@ -139,4 +140,6 @@ token 常量与解析纯函数 (`resolveDisplayContent`) 统一在共享包; 【
 
 ## 参考实现
 
-本模板: 声明源与派生见 `packages/shared/src/config.ts` (`FIELDS` / `PluginConfig` / `COMMAND_PREFIX` / `getDefaultConfig` / `sanitizeConfig` / `parseStringList`) 与 `packages/shared/src/ui.ts` (`PAGES` / `DEFAULT_PAGE`); 展示块占位符见 `packages/shared/src/displayTokens.ts` (`resolveDisplayContent`); 后端映射 (含 scope 过滤与占位符解析) 见 `packages/plugin/src/config.ts` 的 `buildConfigSchema`; 前端渲染见 `packages/webui/src/components/ConfigForm.tsx` 与 `packages/webui/src/pages/StatusPage.tsx` (仪表盘页内嵌配置表单); 骨架消费见 `packages/webui/src/App.tsx` 与 `packages/webui/src/components/Sidebar.tsx`; URL 路由见 `packages/webui/src/hooks/usePageRoute.ts` (hook) 与 `packages/webui/src/utils/pageRoute.ts` (`parsePage` / `buildHash`); 标签输入控件与拆纯函数见 `packages/webui/src/components/configFields/StringListField.tsx`、`packages/webui/src/components/configFields/Chip.tsx` 与 `packages/webui/src/utils/tagList.ts`; 密码框 (自建掩码实现, 规避浏览器密码管理器) 见 `packages/webui/src/components/configFields/PasswordField.tsx` (组件测试 `packages/webui/test/PasswordField.test.tsx`)。
+本模板: 声明源与派生见 `packages/shared/src/config.ts` (`FIELDS` / `PluginConfig` / `COMMAND_PREFIX` / `getDefaultConfig` / `sanitizeConfig` / `parseStringList`) 与 `packages/shared/src/ui.ts` (`PAGES` / `DEFAULT_PAGE`); 展示块占位符见 `packages/shared/src/displayTokens.ts` (`resolveDisplayContent`); 后端映射 (含 scope 过滤与占位符解析) 见 `packages/plugin/src/config.ts` 的 `buildConfigSchema`; 前端渲染见 `packages/webui/src/components/ConfigForm.tsx` 与 `packages/webui/src/pages/StatusPage.tsx` (仪表盘页内嵌配置表单); 骨架消费见 `packages/webui/src/App.tsx` 与 `packages/webui/src/components/Sidebar.tsx`; URL 路由见 `packages/webui/src/hooks/usePageRoute.ts` (hook) 与 `packages/webui/src/utils/pageRoute.ts` (`parsePage` / `buildHash`); 标签输入控件与拆纯函数见 `packages/webui/src/components/configFields/StringListField.tsx`、`packages/webui/src/components/configFields/Chip.tsx` 与 `packages/webui/src/utils/tagList.ts`; 密码框 (自建掩码实现, 规避浏览器密码管理器) 见 `packages/webui/src/components/configFields/PasswordField.tsx`。
+
+组件测试: 各 kind 控件样板见 `packages/webui/test/components/configFields/` (`SelectBox` / `StringListField` / `TextField` / `NumberField` / `BooleanField` / `SelectField` / `MultiSelectField` / `Chip` / `LayoutFields`), 分发层见 `packages/webui/test/components/ConfigForm.test.tsx`, 页面 IO 见 `packages/webui/test/pages/HelpPage.test.tsx` (其过滤纯函数在 `packages/webui/src/utils/helpFilter.ts`, 用例 `packages/webui/test/utils/helpFilter.test.ts`), hook 见 `packages/webui/test/hooks/usePageRoute.test.tsx`。测试按 `src/` 镜像布局, 组件用例 (文件顶 `// @vitest-environment happy-dom`) 经 `packages/webui/test/setup.ts` 统一挂 jest-dom 与清理, 并在 `packages/webui/vitest.config.ts` 注入构建期插件身份。

@@ -3,11 +3,15 @@ import { IconHelp, IconSearch } from '../components/Icons';
 import type {
     Cmd,
     ContentHelp,
-    ContentHelpMethod,
     Instruction,
     InstructionSet,
 } from '../types';
 import { noAuthFetch } from '../utils/api';
+import {
+    filterCmd,
+    isInstructionSet,
+    resolveActivePanel,
+} from '../utils/helpFilter';
 
 /**
  * 帮助文档页
@@ -16,26 +20,9 @@ import { noAuthFetch } from '../utils/api';
  * 等同超级管理员视图)。渲染规则移植自上游渲染服务 napcat-help-generate:
  * - InstructionSet: 文本转义, 权限/会话范围以徽章标识
  * - ContentHelp: name 转义, steps 含可信内联 HTML (dangerouslySetInnerHTML)
+ *
+ * 搜索过滤与面板选择为纯函数, 见 utils/helpFilter。
  */
-
-// ---------- 类型守卫 ----------
-
-function isInstructionSet(
-    item: InstructionSet | ContentHelp,
-): item is InstructionSet {
-    return Array.isArray((item as InstructionSet).instructions);
-}
-
-// ---------- 搜索辅助 ----------
-
-/** 剥离内联 HTML, 仅用于搜索文本匹配 */
-function stripHtml(text: string): string {
-    return text.replace(/<[^>]+>/g, '');
-}
-
-function matches(text: string, q: string): boolean {
-    return stripHtml(text).toLowerCase().includes(q);
-}
 
 // ---------- 徽章与标题 ----------
 
@@ -206,56 +193,6 @@ function GroupBlock({
     return <ContentHelpBlock item={item} />;
 }
 
-// ---------- 搜索过滤 (移植自上游 filter.ts, 叠加文本搜索) ----------
-
-function filterInstructionSet(
-    item: InstructionSet,
-    q: string,
-): InstructionSet | null {
-    if (!q || matches(item.groupName, q)) return item;
-    const instructions = item.instructions.filter(
-        (inst) => matches(inst.cmd, q) || matches(inst.desc, q),
-    );
-    if (instructions.length === 0) return null;
-    return { ...item, instructions };
-}
-
-function filterContentHelp(
-    item: ContentHelp,
-    q: string,
-): ContentHelp | null {
-    if (!q || matches(item.groupName, q)) return item;
-    const methods = item.methods
-        .map((method): ContentHelpMethod | null => {
-            if (matches(method.name, q)) return method;
-            const steps = method.steps.filter((step) =>
-                matches(
-                    Array.isArray(step) ? step.join(' ') : step,
-                    q,
-                ),
-            );
-            if (steps.length === 0) return null;
-            return { ...method, steps };
-        })
-        .filter((m): m is ContentHelpMethod => m !== null);
-    if (methods.length === 0) return null;
-    return { ...item, methods };
-}
-
-function filterCmd(cmd: Cmd, q: string): Cmd {
-    const groups = cmd.cmd
-        .map((item) =>
-            isInstructionSet(item)
-                ? filterInstructionSet(item, q)
-                : filterContentHelp(item, q),
-        )
-        .filter(
-            (item): item is InstructionSet | ContentHelp =>
-                item !== null,
-        );
-    return { ...cmd, cmd: groups };
-}
-
 // ---------- 页面 ----------
 
 export default function HelpPage() {
@@ -300,16 +237,13 @@ export default function HelpPage() {
 
     // 搜索后当前 Tab 无命中时, 自动切到首个有命中的 Tab
     useEffect(() => {
-        if (!q) return;
-        setActive((cur) => {
-            if ((filteredPanels[cur]?.groups.length ?? 0) > 0) {
-                return cur;
-            }
-            const idx = filteredPanels.findIndex(
-                (p) => p.groups.length > 0,
-            );
-            return idx >= 0 ? idx : cur;
-        });
+        setActive((cur) =>
+            resolveActivePanel(
+                filteredPanels.map((p) => p.groups.length),
+                cur,
+                q.length > 0,
+            ),
+        );
     }, [q, filteredPanels]);
 
     if (loading) {

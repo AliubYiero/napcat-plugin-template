@@ -10,7 +10,7 @@ import {
     appendTags,
     removeTag,
     splitPending,
-} from '../src/utils/tagList';
+} from '../../src/utils/tagList';
 
 describe('splitPending', () => {
     it('无分隔符: 整段留在输入框', () => {
@@ -51,9 +51,9 @@ describe('splitPending', () => {
 
 describe('appendTags', () => {
     it('trim / 去空 / 去重后追加, 已有项原位', () => {
-        expect(
-            appendTags(['a', 'b'], [' b ', '', 'c', 'a']),
-        ).toEqual(['a', 'b', 'c']);
+        expect(appendTags(['a', 'b'], [' b ', '', 'c', 'a'])).toEqual(
+            ['a', 'b', 'c'],
+        );
     });
 
     it('不修改原数组', () => {

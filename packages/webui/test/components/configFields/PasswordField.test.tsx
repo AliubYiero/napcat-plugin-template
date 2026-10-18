@@ -8,18 +8,9 @@
  */
 
 import type { PasswordFieldDescriptor } from 'shared';
-import '@testing-library/jest-dom/vitest';
-import {
-    cleanup,
-    fireEvent,
-    render,
-    screen,
-} from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import PasswordField from '../src/components/configFields/PasswordField';
-
-// 未开 globals, RTL 的自动清理不会注册, 手动清理避免用例间 DOM 叠加
-afterEach(cleanup);
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import PasswordField from '../../../src/components/configFields/PasswordField';
 
 const FIELD: PasswordFieldDescriptor = {
     kind: 'password',

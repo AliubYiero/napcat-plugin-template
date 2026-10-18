@@ -150,21 +150,28 @@ pnpm run typecheck
 # 一键部署：构建 → 自动复制到远程插件目录 → 自动重载
 pnpm run deploy
 
-# 开发模式：watch 构建 + 每次构建后自动部署 + 热重载（单进程）
-pnpm run dev
+# dev 部署：以 -dev 新 id 部署为独立插件，不覆盖远程正在运行的正式插件
+pnpm run deploy:dev
 ```
 
-> 热部署插件只在 `--mode deploy` 下挂载，因此 `build` 与 `deploy` 是两条独立链路：
+> 热部署插件只在 `--mode deploy` / `--mode deploy-dev` 下挂载，因此 `build` 与部署是独立链路：
 > `build` = `vite build`（纯构建）  
 > `deploy` = `vite build --mode deploy`（构建完成时 Vite 插件自动部署+重载）  
-> `dev` = `vite build --watch --mode deploy`（每次重新构建后自动部署+重载）  
-> `build` / `deploy` / `dev` 在仓库根目录与 `packages/plugin` 目录下都可用。
+> `deploy:dev` = `vite build --mode deploy-dev`（同上，但注册为独立 dev 插件）  
+> `build` / `deploy` / `deploy:dev` 在仓库根目录与 `packages/plugin` 目录下都可用。
 
-> **注意**：`pnpm run dev` 仅监听**插件后端**（`packages/plugin/src` 下非 webui 的文件）的变化。修改 WebUI 前端代码后，需先重新构建 WebUI（`pnpm --filter webui build`），再重跑后端构建即可随插件一起部署。
+> **dev 部署身份**：`deploy:dev` 会在生成 `dist/package.json` 时改写元信息，令 NapCat 将其识别为**另一个插件**，从而与正在运行的正式插件并存：
+> - id：`<name>-dev`（例如 `napcat-plugin-template-dev`）
+> - 显示名：`[DEV] <plugin 显示名>`
+> - 版本：`<version>-dev`
+>
+> 由于插件 id 不同，`removeDir` / `reloadPlugin` 只作用于 dev 插件，且其配置与数据目录（`ctx.configPath` / `ctx.dataPath`）与正式插件相互隔离。内嵌 WebUI 侧边栏仍显示正式名称与版本（WebUI 按正式身份构建）。
+
+> **注意**：`pnpm run deploy` / `pnpm run deploy:dev` 均为一次性构建部署，不会监听文件变化。修改 WebUI 前端代码后，需先重新构建 WebUI（`pnpm --filter webui build`），再重跑部署命令即可随插件一起部署。
 >
 > 如果只开发 WebUI 前端，推荐使用 `pnpm run dev:webui` 启动前端开发服务器，可实时预览。
 
-`packages/plugin/vite.config.ts` 中的 `copyAssetsPlugin` 会在构建时复制 WebUI 构建产物（由根 `pnpm run build` / `deploy` 先行构建）；`napcatHmrPlugin()` 只在 `--mode deploy` 下挂载，会自动连接调试服务 → 复制 dist/ 到远程 → 调用 reloadPlugin。
+`packages/plugin/vite.config.ts` 中的 `copyAssetsPlugin` 会在构建时复制 WebUI 构建产物（由根 `pnpm run build` / `deploy` / `deploy:dev` 先行构建）；`napcatHmrPlugin()` 只在 `--mode deploy` / `--mode deploy-dev` 下挂载，会自动连接调试服务 → 复制 dist/ 到远程 → 调用 reloadPlugin。
 
 如需自定义调试服务地址或 token：
 

@@ -6,7 +6,7 @@
     "scripts": {
         "build": "pnpm --filter webui build && pnpm --filter napcat-plugin-template build",
         "deploy": "pnpm --filter webui build && pnpm --filter napcat-plugin-template deploy",
-        "dev": "pnpm --filter webui build && pnpm --filter napcat-plugin-template dev",
+        "deploy:dev": "pnpm --filter webui build && pnpm --filter napcat-plugin-template deploy:dev",
         "dev:webui": "pnpm --filter webui dev",
         "test": "pnpm -r test",
         "typecheck": "pnpm -r typecheck",

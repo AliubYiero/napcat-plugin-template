@@ -17,9 +17,10 @@ NapCat 插件开发模板 (pnpm monorepo), 基于实际生产项目架构提炼�
 
 ## 构建与验证
 
-- `pnpm build` (根) — 构建 plugin 与 webui (vite, 含资源复制)。**纯构建**: 热部署插件只在 `--mode deploy` 下挂载, 因此 build 不连调试服务。
+- `pnpm build` (根) — 构建 plugin 与 webui (vite, 含资源复制)。**纯构建**: 热部署插件只在 `--mode deploy` / `--mode deploy-dev` 下挂载, 因此 build 不连调试服务。
 - `pnpm run test` (根, 即 `pnpm -r test`) — plugin 与 webui 的 vitest 单测 (`packages/plugin/test/`、`packages/webui/test/`), 覆盖范式里的纯函数模块。
-- `pnpm run deploy` / `pnpm run dev` — 热部署链路 (构建后自动复制到远程并重载), 需 NapCat 端启用 `napcat-plugin-debug`。
+- `pnpm run deploy` — 热部署链路 (构建后自动复制到远程并重载), 需 NapCat 端启用 `napcat-plugin-debug`。
+- `pnpm run deploy:dev` — dev 部署 (`--mode deploy-dev`): 生成 `dist/package.json` 时把 `name`/`plugin`/`version` 改写为 `-dev` / `[DEV] ` 标注, 以**新 id** 注册为独立插件, 不覆盖远程正在运行的正式插件 (配置与数据目录按 id 隔离); 内嵌 WebUI 仍按正式身份构建。
 - 验证以 **vite build** 与 **vitest** 为准; 类型校验走 `pnpm typecheck` (根, 即 `pnpm -r typecheck`), 或 `pnpm check` (= typecheck + test)。
 - `pnpm typecheck` 只检查**本项目代码**: napcat-types 只发布裸 `.ts` (零 `.d.ts`, 且依赖未发布的 `napcat-protobuf`), 不是可独立编译单元, 直接引入会让 tsc 深入其源码树并大量报错。故 `packages/plugin/tsconfig.json` 用 `paths` 把 `napcat-types/*` 重定向到本地类型垫片 `packages/plugin/types/napcat-types/` (插件框架类型为 0.0.16 的信实副本, OneBot 消息类型族退化为 `any`), 第三方内部被隔离在类型检查之外。垫片为手工抄录, 升级 napcat-types 时需对照同名文件手动同步; 唯一以「值」使用的 `EventType` 已自持于 `packages/plugin/src/onebotEvent.ts`, 故插件对 napcat-types 无运行时/构建依赖。
 

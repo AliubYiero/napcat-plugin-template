@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
+import { injectFavicon } from './scripts/favicon';
 
 // 插件身份以 packages/plugin/package.json 为唯一权威, 构建期注入到前端
 const pluginPkg = JSON.parse(
@@ -23,6 +24,27 @@ const pluginGithubUrl =
     pluginPkg?.napcat?.homepage ||
     'https://github.com/AliubYiero/napcat-plugin-template';
 
+function faviconPlugin(): Plugin {
+    let warn: ((message: string) => void) | undefined;
+
+    return {
+        name: 'inject-plugin-favicon',
+        configResolved(config) {
+            warn = (message) => config.logger.warn(message);
+        },
+        transformIndexHtml(html) {
+            const result = injectFavicon(
+                html,
+                resolve(__dirname, 'public'),
+            );
+            if (result.warning) {
+                warn?.(`[favicon] ${result.warning}`);
+            }
+            return result.html;
+        },
+    };
+}
+
 export default defineConfig({
     plugins: [
         react(),
@@ -37,6 +59,7 @@ export default defineConfig({
                 );
             },
         },
+        faviconPlugin(),
     ],
     define: {
         __PLUGIN_ID__: JSON.stringify(pluginId),

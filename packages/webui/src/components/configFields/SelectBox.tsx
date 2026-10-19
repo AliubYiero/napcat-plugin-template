@@ -100,7 +100,8 @@ export default function SelectBox({
                     aria-expanded={open}
                     onClick={() => setOpen((prev) => !prev)}
                     onKeyDown={(event) => {
-                        if (event.target !== event.currentTarget) return;
+                        if (event.target !== event.currentTarget)
+                            return;
                         if (
                             event.key === 'Enter' ||
                             event.key === ' '

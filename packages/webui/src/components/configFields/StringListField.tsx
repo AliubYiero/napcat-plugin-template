@@ -1,7 +1,11 @@
 import { useRef, useState } from 'react';
 import type { StringListFieldDescriptor } from 'shared';
 import { parseStringList } from 'shared';
-import { appendTags, removeTag, splitPending } from '../../utils/tagList';
+import {
+    appendTags,
+    removeTag,
+    splitPending,
+} from '../../utils/tagList';
 import Chip from './Chip';
 import type { ValueFieldProps } from './types';
 
@@ -22,7 +26,8 @@ export default function StringListField({
     const handleInput = (raw: string) => {
         const { complete, pending: rest } = splitPending(raw);
         setPending(rest);
-        if (complete.length > 0) onChange(appendTags(value, complete));
+        if (complete.length > 0)
+            onChange(appendTags(value, complete));
     };
 
     const commitPending = () => {
@@ -64,7 +69,9 @@ export default function StringListField({
                     <Chip
                         key={tag}
                         label={tag}
-                        onRemove={() => onChange(removeTag(value, tag))}
+                        onRemove={() =>
+                            onChange(removeTag(value, tag))
+                        }
                     />
                 ))}
                 <input
@@ -82,7 +89,8 @@ export default function StringListField({
                     }
                     onKeyDown={handleKeyDown}
                     onBlur={(event) => {
-                        const next = event.relatedTarget as Node | null;
+                        const next =
+                            event.relatedTarget as Node | null;
                         if (
                             next &&
                             event.currentTarget.parentElement?.contains(

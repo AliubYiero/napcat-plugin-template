@@ -5,10 +5,11 @@
  * 范式: docs/webui-config-pattern.md 的 stringList 标签输入。
  * tagList 纯函数的拆分/去重/删除已由其单测覆盖, 此处只测 DOM 层合同:
  * 分隔符即添加、回车/失焦提交、空输入退格删末项、容器聚焦、placeholder 切换。
+ * 容器聚焦由原生 label 关联实现 (happy-dom 不模拟 label 激活), 故只断言关联关系。
  */
 
-import type { StringListFieldDescriptor } from 'shared';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { StringListFieldDescriptor } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 import StringListField from '../../../src/components/configFields/StringListField';
 
@@ -77,10 +78,11 @@ describe('StringListField', () => {
         expect(onChange).toHaveBeenCalledWith(['a']);
     });
 
-    it('点容器聚焦输入框', () => {
+    it('容器为关联输入框的 label (点击聚焦)', () => {
         const { input } = setup([]);
-        const container = input.parentElement as HTMLElement;
-        fireEvent.click(container);
-        expect(document.activeElement).toBe(input);
+        const container = input.parentElement as HTMLLabelElement;
+        expect(container.tagName).toBe('LABEL');
+        expect(container.htmlFor).toBe(input.id);
+        expect(container.control).toBe(input);
     });
 });

@@ -7,8 +7,8 @@
  * SelectBox 自身行为由其单测覆盖, 此处 mock 掉以隔离适配逻辑。
  */
 
-import type { SelectFieldDescriptor } from 'shared';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { SelectFieldDescriptor } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 import SelectField from '../../../src/components/configFields/SelectField';
 

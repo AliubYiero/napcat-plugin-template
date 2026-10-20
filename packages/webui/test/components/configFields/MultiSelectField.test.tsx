@@ -6,8 +6,8 @@
  * 合同: 原样透传为多选 SelectBox (value 与 onChange 均为数组)。
  */
 
-import type { MultiSelectFieldDescriptor } from 'shared';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { MultiSelectFieldDescriptor } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 import MultiSelectField from '../../../src/components/configFields/MultiSelectField';
 

@@ -6,8 +6,8 @@
  * 合同: 受控开关, 切换即提交 boolean。
  */
 
-import type { BooleanFieldDescriptor } from 'shared';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { BooleanFieldDescriptor } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 import BooleanField from '../../../src/components/configFields/BooleanField';
 

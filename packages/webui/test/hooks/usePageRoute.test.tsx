@@ -7,8 +7,8 @@
  *       切页写 location.hash; 点击当前页 no-op; hashchange 更新当前页。
  */
 
-import { DEFAULT_PAGE } from 'shared';
 import { act, renderHook } from '@testing-library/react';
+import { DEFAULT_PAGE } from 'shared';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { usePageRoute } from '../../src/hooks/usePageRoute';
 

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { StringListFieldDescriptor } from 'shared';
 import { parseStringList } from 'shared';
 import {
@@ -22,6 +22,7 @@ export default function StringListField({
 }: ValueFieldProps<StringListFieldDescriptor, readonly string[]>) {
     const [pending, setPending] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
+    const inputId = useId();
 
     const handleInput = (raw: string) => {
         const { complete, pending: rest } = splitPending(raw);
@@ -61,10 +62,7 @@ export default function StringListField({
                     {field.description}
                 </div>
             )}
-            <div
-                className="tag-input"
-                onClick={() => inputRef.current?.focus()}
-            >
+            <label htmlFor={inputId} className="tag-input">
                 {value.map((tag) => (
                     <Chip
                         key={tag}
@@ -75,6 +73,7 @@ export default function StringListField({
                     />
                 ))}
                 <input
+                    id={inputId}
                     ref={inputRef}
                     type="text"
                     value={pending}
@@ -102,7 +101,7 @@ export default function StringListField({
                         commitPending();
                     }}
                 />
-            </div>
+            </label>
         </div>
     );
 }

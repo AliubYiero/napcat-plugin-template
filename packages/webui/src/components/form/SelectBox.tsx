@@ -190,6 +190,7 @@ export default function SelectBox({
                     {description}
                 </div>
             )}
+            {/* biome-ignore lint/a11y/useSemanticElements: 触发框内含 Chip 删除按钮, 原生 <button> 不允许嵌套按钮 */}
             <div
                 ref={triggerRef}
                 role="button"

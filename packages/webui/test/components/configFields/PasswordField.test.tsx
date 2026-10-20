@@ -7,8 +7,8 @@
  * 显隐切换、失焦 / 回车提交、值未变不提交。
  */
 
-import type { PasswordFieldDescriptor } from 'shared';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { PasswordFieldDescriptor } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 import PasswordField from '../../../src/components/configFields/PasswordField';
 

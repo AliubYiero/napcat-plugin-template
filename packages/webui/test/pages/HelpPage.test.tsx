@@ -6,13 +6,13 @@
  * 过滤纯逻辑见 utils/helpFilter 的单测; 此处只测 IO 接线与搜索联动。
  */
 
-import type { Cmd } from 'shared';
 import {
     fireEvent,
     render,
     screen,
     waitFor,
 } from '@testing-library/react';
+import type { Cmd } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HelpPage from '../../src/pages/HelpPage';
 import { noAuthFetch } from '../../src/utils/api';

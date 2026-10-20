@@ -7,8 +7,8 @@
  *       越界不前端钳制 (区间钳制归后端 sanitizeConfig)。
  */
 
-import type { NumberFieldDescriptor } from 'shared';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { NumberFieldDescriptor } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 import NumberField from '../../../src/components/configFields/NumberField';
 

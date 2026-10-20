@@ -32,9 +32,9 @@ describe('Chip', () => {
         const onRemove = vi.fn();
         const onParentClick = vi.fn();
         render(
-            <div onClick={onParentClick}>
+            <button type="button" onClick={onParentClick}>
                 <Chip label="10001" onRemove={onRemove} />
-            </div>,
+            </button>,
         );
         fireEvent.click(
             screen.getByRole('button', { name: '移除 10001' }),

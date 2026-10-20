@@ -6,8 +6,8 @@
  * 合同: 本地态 + 失焦 / 回车提交, 值未变不提交, 外部值变化回填。
  */
 
-import type { TextFieldDescriptor } from 'shared';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { TextFieldDescriptor } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 import TextField from '../../../src/components/configFields/TextField';
 

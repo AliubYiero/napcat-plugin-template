@@ -12,7 +12,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import SelectField from '../../../src/components/configFields/SelectField';
 
-vi.mock('../../../src/components/configFields/SelectBox', () => ({
+vi.mock('../../../src/components/form/SelectBox', () => ({
     default: ({
         value,
         multiple,

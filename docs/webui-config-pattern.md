@@ -29,6 +29,7 @@ FIELDS (字段描述符, ctx-free 纯数据, 放共享包)
 6. 【应该】**前端构建期** import 描述符, 而非运行时拉取 schema 端点——前后端同仓同步构建时二者天然一致。
 7. 【必须】**WebUI 骨架 (页面/菜单/标题) 同样单源**: 页面元信息放共享包, 前端只保留"页 id → 组件"的映射。
 8. 【应该】**插件身份以 `package.json` 为唯一权威** (宿主只认它), 构建期注入前端, 不硬编码插件名。
+9. 【应该】**表单项复用**: WebUI 其它页面/组件需要表单控件时, 优先复用 `components/form/` 下的通用控件 (下拉 `SelectBox`、胶囊 `Chip`、开关 `Toggle`、勾选框 `Checkbox`); 描述符绑定的 `configFields/XxxField` 只作 `ConfigForm` 的 kind 适配器, 不直接用于业务页面。
 
 ## 范式正文
 
@@ -133,6 +134,7 @@ token 常量与解析纯函数 (`resolveDisplayContent`) 统一在共享包; 【
 - [ ] 【必须】共享清单: 加一项 `id` / `title` / `description` / `icon` / `order`
 - [ ] 【必须】前端: 在 `页 id → 组件` 映射注册对应组件
 - [ ] 【必须】确认 `id` 可作 hash 片段直达 (`#/<id>`), 无需改路由层
+- [ ] 【应该】页面内表单控件优先复用 `components/form/` 的通用控件, 不重复实现下拉 / 多选 / 开关 / 勾选框
 
 ## 与其他范式的关系
 
@@ -142,6 +144,6 @@ token 常量与解析纯函数 (`resolveDisplayContent`) 统一在共享包; 【
 
 ## 参考实现
 
-本模板: 声明源与派生见 `packages/shared/src/config.ts` (`FIELDS` / `PluginConfig` / `COMMAND_PREFIX` / `getDefaultConfig` / `sanitizeConfig` / `parseStringList`) 与 `packages/shared/src/ui.ts` (`PAGES` / `DEFAULT_PAGE`); 展示块占位符见 `packages/shared/src/displayTokens.ts` (`resolveDisplayContent`); 后端映射 (含 scope 过滤与占位符解析) 见 `packages/plugin/src/config.ts` 的 `buildConfigSchema`; 前端渲染见 `packages/webui/src/components/ConfigForm.tsx` 与 `packages/webui/src/pages/StatusPage.tsx` (仪表盘页内嵌配置表单); 骨架消费见 `packages/webui/src/App.tsx` 与 `packages/webui/src/components/Sidebar.tsx`; URL 路由见 `packages/webui/src/hooks/usePageRoute.ts` (hook) 与 `packages/webui/src/utils/pageRoute.ts` (`parsePage` / `buildHash`); 标签输入控件与拆纯函数见 `packages/webui/src/components/configFields/StringListField.tsx`、`packages/webui/src/components/configFields/Chip.tsx` 与 `packages/webui/src/utils/tagList.ts`; 密码框 (自建掩码实现, 规避浏览器密码管理器) 见 `packages/webui/src/components/configFields/PasswordField.tsx`。
+本模板: 声明源与派生见 `packages/shared/src/config.ts` (`FIELDS` / `PluginConfig` / `COMMAND_PREFIX` / `getDefaultConfig` / `sanitizeConfig` / `parseStringList`) 与 `packages/shared/src/ui.ts` (`PAGES` / `DEFAULT_PAGE`); 展示块占位符见 `packages/shared/src/displayTokens.ts` (`resolveDisplayContent`); 后端映射 (含 scope 过滤与占位符解析) 见 `packages/plugin/src/config.ts` 的 `buildConfigSchema`; 前端渲染见 `packages/webui/src/components/ConfigForm.tsx` 与 `packages/webui/src/pages/StatusPage.tsx` (仪表盘页内嵌配置表单); 骨架消费见 `packages/webui/src/App.tsx` 与 `packages/webui/src/components/Sidebar.tsx`; URL 路由见 `packages/webui/src/hooks/usePageRoute.ts` (hook) 与 `packages/webui/src/utils/pageRoute.ts` (`parsePage` / `buildHash`); 标签输入控件与拆纯函数见 `packages/webui/src/components/configFields/StringListField.tsx`、`packages/webui/src/components/form/Chip.tsx` 与 `packages/webui/src/utils/tagList.ts`; 通用表单控件 (下拉 `SelectBox` / 胶囊 `Chip` / 开关 `Toggle` / 勾选框 `Checkbox`) 见 `packages/webui/src/components/form/`; 密码框 (自建掩码实现, 规避浏览器密码管理器) 见 `packages/webui/src/components/configFields/PasswordField.tsx`。
 
-分组切分见 `packages/webui/src/components/configFields/groupFields.ts` (纯函数, 用例 `packages/webui/test/components/configFields/groupFields.test.ts`)。组件测试: 各 kind 控件样板见 `packages/webui/test/components/configFields/` (`SelectBox` / `StringListField` / `TextField` / `NumberField` / `BooleanField` / `SelectField` / `MultiSelectField` / `Chip` / `LayoutFields`), 分发层见 `packages/webui/test/components/ConfigForm.test.tsx`, 页面 IO 见 `packages/webui/test/pages/HelpPage.test.tsx` (其过滤纯函数在 `packages/webui/src/utils/helpFilter.ts`, 用例 `packages/webui/test/utils/helpFilter.test.ts`), hook 见 `packages/webui/test/hooks/usePageRoute.test.tsx`。测试按 `src/` 镜像布局, 组件用例 (文件顶 `// @vitest-environment happy-dom`) 经 `packages/webui/test/setup.ts` 统一挂 jest-dom 与清理, 并在 `packages/webui/vitest.config.ts` 注入构建期插件身份。
+分组切分见 `packages/webui/src/components/configFields/groupFields.ts` (纯函数, 用例 `packages/webui/test/components/configFields/groupFields.test.ts`)。组件测试: 各 kind 控件样板见 `packages/webui/test/components/configFields/` (`StringListField` / `TextField` / `NumberField` / `BooleanField` / `SelectField` / `MultiSelectField` / `LayoutFields`), 通用控件见 `packages/webui/test/components/form/` (`SelectBox` / `Chip` / `Toggle` / `Checkbox`), 分发层见 `packages/webui/test/components/ConfigForm.test.tsx`, 页面 IO 见 `packages/webui/test/pages/HelpPage.test.tsx` (其过滤纯函数在 `packages/webui/src/utils/helpFilter.ts`, 用例 `packages/webui/test/utils/helpFilter.test.ts`), hook 见 `packages/webui/test/hooks/usePageRoute.test.tsx`。测试按 `src/` 镜像布局, 组件用例 (文件顶 `// @vitest-environment happy-dom`) 经 `packages/webui/test/setup.ts` 统一挂 jest-dom 与清理, 并在 `packages/webui/vitest.config.ts` 注入构建期插件身份。

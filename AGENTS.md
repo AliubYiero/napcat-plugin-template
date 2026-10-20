@@ -46,7 +46,8 @@ packages/plugin   插件后端 (发布物)
 packages/webui    React SPA (独立构建)
   public/favicon.*                   站点图标源文件 (恰好一个, 构建期内联)
   scripts/favicon.ts                 图标扫描/内联纯函数 (构建期)
-  src/components/configFields/       声明式配置表单控件
+  src/components/configFields/       声明式配置表单控件 (描述符适配器)
+  src/components/form/               通用表单控件 (SelectBox / Chip / Toggle / Checkbox)
   src/pages/                         页面 (StatusPage 内嵌配置表单、HelpPage 等)
 packages/shared   跨包共享 (单一事实来源)
   src/config.ts             FIELDS / PluginConfig / COMMAND_PREFIX / sanitizeConfig / parseStringList
@@ -239,6 +240,7 @@ if (event.post_type !== EventType.MESSAGE) return;  // 只处理消息事件
 ## 注意事项
 
 - **日志**: 统一 `pluginState.logger` / `ctx.logger`, 方法为 `log`/`debug`/`info`/`warn`/`error`。
+- **WebUI 表单项复用**: 其它页面/组件需要表单控件时, 优先复用 `components/form/` 的通用控件 (`SelectBox` / `Chip` / `Toggle` / `Checkbox`); 描述符绑定的 `configFields/XxxField` 只作 `ConfigForm` 的 kind 适配器, 不直接用于业务页面。
 - **配置持久化**: `pluginState.replaceConfig` (外部输入, 会清洗) / `updateConfig` (内部可信)。
 - **业务数据**: `pluginState.loadDataFile` / `saveDataFile`; 会话级配置走 `sessionConfigService`。
 - **资源清理**: `plugin_cleanup` 必须清理定时器与连接; `pluginState.cleanup()` 已自动清理 `timers` 与保存配置。

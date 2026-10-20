@@ -1,5 +1,5 @@
 import type { MultiSelectFieldDescriptor } from 'shared';
-import SelectBox from './SelectBox';
+import SelectBox from '../form/SelectBox';
 import type { ValueFieldProps } from './types';
 
 export default function MultiSelectField({

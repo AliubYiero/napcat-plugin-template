@@ -11,7 +11,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import MultiSelectField from '../../../src/components/configFields/MultiSelectField';
 
-vi.mock('../../../src/components/configFields/SelectBox', () => ({
+vi.mock('../../../src/components/form/SelectBox', () => ({
     default: ({
         value,
         multiple,

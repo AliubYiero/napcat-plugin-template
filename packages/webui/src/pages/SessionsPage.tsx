@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Checkbox from '../components/form/Checkbox';
+import Toggle from '../components/form/Toggle';
 import {
     IconCheck,
     IconGroup,
@@ -246,11 +248,10 @@ export default function SessionsPage() {
                     <thead>
                         <tr className="text-left text-xs text-gray-400 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02]">
                             <th className="py-2.5 px-4 font-medium w-10">
-                                <input
-                                    type="checkbox"
+                                <Checkbox
                                     checked={selectAll}
                                     onChange={toggleSelectAll}
-                                    className="rounded border-gray-300 dark:border-gray-600"
+                                    ariaLabel="全选会话"
                                 />
                             </th>
                             <th className="py-2.5 px-4 font-medium">
@@ -276,15 +277,16 @@ export default function SessionsPage() {
                                 className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors"
                             >
                                 <td className="py-2.5 px-4">
-                                    <input
-                                        type="checkbox"
+                                    <Checkbox
                                         checked={selected.has(
                                             sessionKey(session),
                                         )}
                                         onChange={() =>
                                             toggleSelect(session)
                                         }
-                                        className="rounded border-gray-300 dark:border-gray-600"
+                                        ariaLabel={`选择 ${
+                                            session.name || session.id
+                                        }`}
                                     />
                                 </td>
                                 <td className="py-2.5 px-4">
@@ -305,19 +307,18 @@ export default function SessionsPage() {
                                     </td>
                                 )}
                                 <td className="py-2.5 px-4 text-right">
-                                    <label className="toggle">
-                                        <input
-                                            type="checkbox"
-                                            checked={session.enabled}
-                                            onChange={() =>
-                                                toggleSession(
-                                                    session,
-                                                    !session.enabled,
-                                                )
-                                            }
-                                        />
-                                        <div className="slider" />
-                                    </label>
+                                    <Toggle
+                                        checked={session.enabled}
+                                        ariaLabel={`${
+                                            session.name || session.id
+                                        } 启用状态`}
+                                        onChange={(enabled) =>
+                                            toggleSession(
+                                                session,
+                                                enabled,
+                                            )
+                                        }
+                                    />
                                 </td>
                             </tr>
                         ))}

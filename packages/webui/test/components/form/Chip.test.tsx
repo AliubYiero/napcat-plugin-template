@@ -8,7 +8,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import Chip from '../../../src/components/configFields/Chip';
+import Chip from '../../../src/components/form/Chip';
 
 describe('Chip', () => {
     it('渲染 label 与带无障碍名的删除按钮', () => {

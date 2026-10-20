@@ -6,7 +6,7 @@ import {
     removeTag,
     splitPending,
 } from '../../utils/tagList';
-import Chip from './Chip';
+import Chip from '../form/Chip';
 import type { ValueFieldProps } from './types';
 
 /**

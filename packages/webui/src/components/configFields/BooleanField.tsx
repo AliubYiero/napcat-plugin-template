@@ -1,4 +1,5 @@
 import type { BooleanFieldDescriptor } from 'shared';
+import Toggle from '../form/Toggle';
 import type { ValueFieldProps } from './types';
 
 export default function BooleanField({
@@ -18,14 +19,7 @@ export default function BooleanField({
                     </div>
                 )}
             </div>
-            <label className="toggle">
-                <input
-                    type="checkbox"
-                    checked={value}
-                    onChange={(e) => onChange(e.target.checked)}
-                />
-                <div className="slider" />
-            </label>
+            <Toggle checked={value} onChange={onChange} />
         </div>
     );
 }

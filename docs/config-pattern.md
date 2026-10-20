@@ -98,6 +98,19 @@ WebUI 的两套呈现 (宿主自动面板 / 自定义前端表单) 均由描述�
 
 字段声明、kind 分类表、逃生舱 (覆盖注册表) 与前端渲染见 [webui-config-pattern](./webui-config-pattern.md)。
 
+### 分组布局 (section)
+
+`section` 是扁平 `FIELDS` 中的**分隔行** (无 key, 不落盘), 同时驱动两侧布局, 不改变清洗语义:
+
+- 【必须】`section` 是 FIELDS 中的分隔行 (无 key、不落盘): WebUI 以它作为分卡边界, 原生面板渲染为分组标题; 被 `scope` 过滤时既不可见也不作为分组边界。
+- **WebUI**: 纯函数 `packages/webui/src/components/configFields/groupFields.ts` 按 section 把字段切成多组, 每组渲染为一张 `.card`。
+    - 第一个 section 之前的字段归入「基础配置」; 每个 section 开启新组, 后续字段归属该组直到下一个 section。
+    - 只渲染非空组 (空 section / 空基础组不产生空卡片); 被 `scope: 'panel'` 过滤的 section 既不显示也不作为分组边界; `display` 跟随当前组。
+    - section 的 `description` 存在时渲染为标题下方的灰色小字 (`text-xs text-gray-400`)。
+- **原生面板**: `packages/plugin/src/config.ts` 把 section 渲染为分组标题 (粉色竖条 + 上边框 + 可选副标题), 样式集中在 `buildConfigSchemaFromFields` 注入的**单份** `<style>` (类名统一 `napcat-plugin-section-*` 前缀)。
+    - 仅当过滤后存在可见 section 时才注入样式块; 无 section 时面板保持原样。
+    - 宿主把 `html` 内容直接注入 DOM, 且不会为插件字符串生成 Tailwind `dark:` 规则; 故暗色用 `.dark` / `[data-theme="dark"]` 祖先选择器跟随面板主题 class, 不用 `prefers-color-scheme`。
+
 ### 会话级配置不在本文件
 
 会话级配置 (群/好友) **不属于**插件配置文件: 它随会话数无界增长, 又是运行期可变的会话数据, 放进来会让每次 `saveConfig` 整体重写全部配置、并跟着 `/config` 整体下发。它由 store 承载 (独立的 `id + type` 数据文件), 权威范式见 [store-pattern](./store-pattern.md)。
@@ -119,6 +132,7 @@ WebUI 的两套呈现 (宿主自动面板 / 自定义前端表单) 均由描述�
 
 - [ ] 【必须】共享包: 在字段描述符数组加一项 (`kind` / `label` / `description` / `default`), 类型随之派生
 - [ ] 【应该】若是枚举: 候选值抽常量, 描述符与清洗共用
+- [ ] 【应该】需要归入新分组时: 在 `FIELDS` 中插入 `section` 分隔行, 不新增描述符字段
 - [ ] 【必须】确认描述符键集与配置接口一致 (`satisfies` + 键集单测)
 - [ ] 【必须】若是会话级字段: 它不属于本文件, 见 [store-pattern](./store-pattern.md), 并确认"单一查询入口"仍覆盖
 - [ ] 【应该】若语义有默认值选择 (尤其是启用开关): 在 `CONTEXT.md` 中声明, 必要时补 ADR
@@ -132,4 +146,4 @@ WebUI 的两套呈现 (宿主自动面板 / 自定义前端表单) 均由描述�
 
 ## 参考实现
 
-本模板: 字段描述符、`PluginConfig`、默认值与清洗派生见 `packages/shared/src/config.ts`; 后端原生面板 Schema 映射见 `packages/plugin/src/config.ts` 的 `buildConfigSchema`; 运行时读写 (读盘清洗、`replaceConfig` / `updateConfig`) 见 `packages/plugin/src/core/state.ts`。
+本模板: 字段描述符、`PluginConfig`、默认值与清洗派生见 `packages/shared/src/config.ts`; 后端原生面板 Schema 映射见 `packages/plugin/src/config.ts` 的 `buildConfigSchema` (分组样式块与 `buildSectionHtml` / `buildConfigSchemaFromFields` 同文件); WebUI 分组切分见 `packages/webui/src/components/configFields/groupFields.ts`; 运行时读写 (读盘清洗、`replaceConfig` / `updateConfig`) 见 `packages/plugin/src/core/state.ts`。

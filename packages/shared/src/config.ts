@@ -142,7 +142,13 @@ export type ValueFieldDescriptor =
     | MultiSelectFieldDescriptor
     | StringListFieldDescriptor;
 
-/** 仅布局/展示, 不落盘, 无 key */
+/**
+ * 仅布局/展示, 不落盘, 无 key
+ *
+ * 【必须】section 是扁平 FIELDS 中的分隔行: WebUI 以它作为分卡边界
+ * (其后的字段归入同名片, 直到下一个 section); 原生面板渲染为分组标题。
+ * 被 `scope` 过滤时既不可见也不作为分组边界。
+ */
 export interface SectionFieldDescriptor extends FieldBase {
     kind: 'section';
 }
@@ -253,7 +259,7 @@ export const FIELDS = [
         kind: 'display',
         scope: 'panel',
         content: `<div class="prose dark:prose-invert max-w-none">
-  <div style="padding: 16px; background: linear-gradient(135deg, #fff7fa 0%, #ffeaf2 100%); border: 1px solid rgba(251,114,153,0.22); border-radius: 12px; margin-bottom: 20px; color: #5c2a3d;">
+  <div style="padding: 16px; background: linear-gradient(135deg, #fff7fa 0%, #ffeaf2 100%); border: 1px solid rgba(251,114,153,0.22); border-radius: 12px; margin-bottom: 12px; color: #5c2a3d;">
     <h3 style="margin: 0 0 6px 0; font-size: 18px; font-weight: 600; color: #b23a63;">${PLUGIN_DISPLAY_NAME_TOKEN}</h3>
     <p style="margin: 0; font-size: 13px; color: #8a5a6c; opacity: 1;">${PLUGIN_DESCRIPTION_TOKEN}</p>
     <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
@@ -261,6 +267,10 @@ export const FIELDS = [
     </div>
   </div>
 </div>`,
+    },
+    {
+        kind: 'section',
+        label: '基础配置',
     },
     {
         key: 'adminUsers',
@@ -287,7 +297,9 @@ export const FIELDS = [
     // ==== 示例字段: 演示各 kind, 开新项目时请整段删除 (含 PluginConfig 对应键) ====
     {
         kind: 'section',
-        label: '示例字段（演示各 kind，开新项目后请删除）',
+        label: '示例字段',
+        description:
+            '演示各 kind 的呈现; 开新项目后请连同本分组删除 (本行即 section 的 description)',
     },
     {
         key: 'exampleBoolean',

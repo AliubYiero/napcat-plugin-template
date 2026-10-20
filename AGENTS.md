@@ -109,6 +109,7 @@ pnpm deploy:dev              # dev 部署: 以 <name>-dev 新 id 注册, 不覆�
 - 【必须】每字段声明一个可渲染 base kind 并写 `description`; 描述符键集与 `PluginConfig` 一致 (`satisfies` + 单测)。
 - 【必须】描述符是 ctx-free 纯数据; 需要 ctx 的 Schema 映射必须参数注入 (`buildConfigSchema(ctx)`, 禁止静态 import 业务模块)。
 - 【必须】运行时数据只允许进入 `display` 展示块, 不得进入可保存配置项。
+- 【必须】`FIELDS` 的 `section` 是分隔行 (无 key、不落盘): WebUI 以它切分卡片, 原生面板渲染为分组标题; 被 `scope` 过滤时不可见也不作为边界。
 - 【必须】会话级配置不进配置文件 (由 store 承载), 提供单一查询入口并在消息入口短路。
 - 【必须】WebUI 骨架 (页面/菜单/标题) 同样单源; URL 用 hash 且为当前页唯一真相源。
 

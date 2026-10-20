@@ -12,7 +12,11 @@ import type {
     PluginConfigSchema,
     PluginEntry,
 } from 'napcat-types/napcat-onebot/network/plugin/types';
-import type { ConfigField, DisplayTokenValues } from 'shared';
+import type {
+    ConfigField,
+    DisplayTokenValues,
+    SectionFieldDescriptor,
+} from 'shared';
 import {
     buildPasswordPanelHint,
     DEFAULT_PAGE,
@@ -32,10 +36,48 @@ import type { PluginConfig } from './types';
 export const DEFAULT_CONFIG: PluginConfig = getDefaultConfig();
 
 /**
+ * 分组标题样式
+ *
+ * html 字段会被直接注入宿主 DOM, 因此:
+ *   - 类名统一加 `napcat-plugin-section-` 前缀 (style 是全局作用域);
+ *   - 暗色用 `.dark` / `[data-theme="dark"]` 祖先选择器, 跟随 NapCat 面板
+ *     的主题 class (宿主不读取 prefers-color-scheme, 也不会为本字符串生成
+ *     Tailwind dark: 规则)。
+ */
+const SECTION_STYLE = `<style>
+.napcat-plugin-section-title { display: flex; align-items: center; gap: 8px; margin: 0 0 2px; padding-top: 14px; border-top: 1px solid rgba(251,114,153,0.18); font-size: 14px; font-weight: 600; line-height: 20px; color: #b23a63; letter-spacing: .2px; }
+.napcat-plugin-section-bar { width: 3px; height: 14px; border-radius: 2px; background: #fb7299; flex: 0 0 auto; }
+.napcat-plugin-section-desc { margin: 0; font-size: 12px; line-height: 18px; color: #6b7280; }
+.dark .napcat-plugin-section-title, [data-theme="dark"] .napcat-plugin-section-title { color: #f49ab5; }
+.dark .napcat-plugin-section-desc, [data-theme="dark"] .napcat-plugin-section-desc { color: #9ca3af; }
+</style>`;
+
+/** 分组标题 HTML (置于样式块之外, 由 SECTION_STYLE 提供样式) */
+export function buildSectionHtml(
+    field: SectionFieldDescriptor,
+): string {
+    const description = field.description
+        ? `<p class="napcat-plugin-section-desc">${escapeHtml(field.description)}</p>`
+        : '';
+    return `<div class="napcat-plugin-section"><div class="napcat-plugin-section-title"><span class="napcat-plugin-section-bar"></span><span>${escapeHtml(field.label)}</span></div>${description}</div>`;
+}
+
+/**
  * 构建 NapCat 原生配置面板 Schema
  *
- * 遍历 shared 的 FIELDS, 按 kind 映射到 `ctx.NapCatConfig` 的构建器。
  * 【必须】新增配置项只需改 shared/src/config.ts (FIELDS), 此处无需改动。
+ * 签名保持 ctx-only; 需要注入字段的调用方 (测试) 用 buildConfigSchemaFromFields。
+ */
+export function buildConfigSchema(
+    ctx: NapCatPluginContext,
+): PluginConfigSchema {
+    return buildConfigSchemaFromFields(ctx, FIELDS_ALL);
+}
+
+/**
+ * 按给定字段构建原生面板 Schema (参数注入, 供测试注入合成字段)
+ *
+ * 遍历字段, 按 kind 映射到 `ctx.NapCatConfig` 的构建器。
  *
  *   - boolean(key, label, defaultValue?, description?)          → 开关
  *   - text(key, label, defaultValue?, description?)             → 文本输入
@@ -47,15 +89,28 @@ export const DEFAULT_CONFIG: PluginConfig = getDefaultConfig();
  *
  * 【例外】`password` 原生面板无密码控件: `scope` 为 `webui` 时本就不渲染
  *   (见下方 filter), `scope` 为 `both` 时改为渲染跳转引导块 (见 toNapCatItem)。
+ *
+ * 存在可见 section 时, 单份分组样式块作为首个 schema 项前置; 无 section 时
+ * 面板保持原样 (开新项目删掉示例分组后不残留死样式)。
  */
-export function buildConfigSchema(
+export function buildConfigSchemaFromFields(
     ctx: NapCatPluginContext,
+    fields: readonly ConfigField[],
 ): PluginConfigSchema {
     const values = getDisplayTokenValues(ctx);
-    const items = FIELDS_ALL.filter(
+    const visibleFields = fields.filter(
         (field) => field.scope !== 'webui',
-    ).map((field) => toNapCatItem(ctx, field, values));
-    return ctx.NapCatConfig.combine(...items);
+    );
+    const items = visibleFields.map((field) =>
+        toNapCatItem(ctx, field, values),
+    );
+    const hasSection = visibleFields.some(
+        (field) => field.kind === 'section',
+    );
+    return ctx.NapCatConfig.combine(
+        ...(hasSection ? [ctx.NapCatConfig.html(SECTION_STYLE)] : []),
+        ...items,
+    );
 }
 
 /**
@@ -173,10 +228,8 @@ function toNapCatItem(
                 field.description,
             );
         case 'section':
-            // 仅布局: 分组标题 (加粗, 与面板其它标题层级一致)
-            return NapCatConfig.html(
-                `<div class="font-semibold">${escapeHtml(field.label)}</div>`,
-            );
+            // 仅布局: 分组标题 (样式见 SECTION_STYLE)
+            return NapCatConfig.html(buildSectionHtml(field));
         case 'display':
             // 解析 {{...}} 占位符后再交给原生面板渲染
             return NapCatConfig.html(

@@ -54,8 +54,10 @@ FIELDS (字段描述符, ctx-free 纯数据, 放共享包)
 
 除有值字段外, 声明源允许两类**不带 key、不落盘**的字段, 用于组织界面:
 
-- `section`: 分组标题 (仅分隔视觉区块; 保留 `label`)。
+- `section`: 分组边界 (仅分隔视觉区块; 保留 `label`, 可选 `description` 作副标题)。
 - `display`: 纯展示块, 仅含 `content` (HTML 片段), 不需要 `label` / `description`。
+
+`FIELDS` 先经纯函数 `packages/webui/src/components/configFields/groupFields.ts` 按 `section` 切成多组, `ConfigForm` 每组渲染为一张 `.card` (标题即 section 的 `label`, 可选 `description` 作为标题下的小字副标题); 第一个 section 前的字段归入「基础配置」, 空组不渲染。原生面板把 `section` 渲染为分组标题 (详见 [config-pattern.md](./config-pattern.md) 的「分组布局」)。
 
 【必须】运行时数据只允许进入 `display` 展示块, 不得进入可保存字段 (与 [config-pattern.md](./config-pattern.md) 的"Schema 静态/动态边界"一致)。
 
@@ -142,4 +144,4 @@ token 常量与解析纯函数 (`resolveDisplayContent`) 统一在共享包; 【
 
 本模板: 声明源与派生见 `packages/shared/src/config.ts` (`FIELDS` / `PluginConfig` / `COMMAND_PREFIX` / `getDefaultConfig` / `sanitizeConfig` / `parseStringList`) 与 `packages/shared/src/ui.ts` (`PAGES` / `DEFAULT_PAGE`); 展示块占位符见 `packages/shared/src/displayTokens.ts` (`resolveDisplayContent`); 后端映射 (含 scope 过滤与占位符解析) 见 `packages/plugin/src/config.ts` 的 `buildConfigSchema`; 前端渲染见 `packages/webui/src/components/ConfigForm.tsx` 与 `packages/webui/src/pages/StatusPage.tsx` (仪表盘页内嵌配置表单); 骨架消费见 `packages/webui/src/App.tsx` 与 `packages/webui/src/components/Sidebar.tsx`; URL 路由见 `packages/webui/src/hooks/usePageRoute.ts` (hook) 与 `packages/webui/src/utils/pageRoute.ts` (`parsePage` / `buildHash`); 标签输入控件与拆纯函数见 `packages/webui/src/components/configFields/StringListField.tsx`、`packages/webui/src/components/configFields/Chip.tsx` 与 `packages/webui/src/utils/tagList.ts`; 密码框 (自建掩码实现, 规避浏览器密码管理器) 见 `packages/webui/src/components/configFields/PasswordField.tsx`。
 
-组件测试: 各 kind 控件样板见 `packages/webui/test/components/configFields/` (`SelectBox` / `StringListField` / `TextField` / `NumberField` / `BooleanField` / `SelectField` / `MultiSelectField` / `Chip` / `LayoutFields`), 分发层见 `packages/webui/test/components/ConfigForm.test.tsx`, 页面 IO 见 `packages/webui/test/pages/HelpPage.test.tsx` (其过滤纯函数在 `packages/webui/src/utils/helpFilter.ts`, 用例 `packages/webui/test/utils/helpFilter.test.ts`), hook 见 `packages/webui/test/hooks/usePageRoute.test.tsx`。测试按 `src/` 镜像布局, 组件用例 (文件顶 `// @vitest-environment happy-dom`) 经 `packages/webui/test/setup.ts` 统一挂 jest-dom 与清理, 并在 `packages/webui/vitest.config.ts` 注入构建期插件身份。
+分组切分见 `packages/webui/src/components/configFields/groupFields.ts` (纯函数, 用例 `packages/webui/test/components/configFields/groupFields.test.ts`)。组件测试: 各 kind 控件样板见 `packages/webui/test/components/configFields/` (`SelectBox` / `StringListField` / `TextField` / `NumberField` / `BooleanField` / `SelectField` / `MultiSelectField` / `Chip` / `LayoutFields`), 分发层见 `packages/webui/test/components/ConfigForm.test.tsx`, 页面 IO 见 `packages/webui/test/pages/HelpPage.test.tsx` (其过滤纯函数在 `packages/webui/src/utils/helpFilter.ts`, 用例 `packages/webui/test/utils/helpFilter.test.ts`), hook 见 `packages/webui/test/hooks/usePageRoute.test.tsx`。测试按 `src/` 镜像布局, 组件用例 (文件顶 `// @vitest-environment happy-dom`) 经 `packages/webui/test/setup.ts` 统一挂 jest-dom 与清理, 并在 `packages/webui/vitest.config.ts` 注入构建期插件身份。

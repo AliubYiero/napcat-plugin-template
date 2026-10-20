@@ -3,32 +3,53 @@
  * ConfigForm 组件行为
  *
  * 范式: docs/webui-config-pattern.md 的声明式配置表单。
- * 合同: 按 FIELDS 顺序与 kind 分发控件; 过滤 scope='panel';
- *       布局 / 展示字段不落盘; onChange 冒泡字段 key; overrides 按 key 覆盖。
+ * 合同: 按 FIELDS 的 section 切成多张卡片; 每张卡按 kind 渲染控件;
+ *       过滤 scope='panel'; 布局 / 展示字段不落盘; onChange 冒泡字段 key;
+ *       overrides 按 key 覆盖。
  */
 
-import type { ComponentType } from 'react';
-import { type FieldRenderProps } from '../../src/components/ConfigForm';
-import { getDefaultConfig } from 'shared';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { ComponentType } from 'react';
+import { getDefaultConfig } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
-import ConfigForm from '../../src/components/ConfigForm';
+import ConfigForm, {
+    type FieldRenderProps,
+} from '../../src/components/ConfigForm';
 
 function renderForm(
     overrides?: Record<string, ComponentType<FieldRenderProps>>,
 ) {
     const onChange = vi.fn();
-    render(
+    const { container } = render(
         <ConfigForm
             config={getDefaultConfig()}
             onChange={onChange}
             overrides={overrides}
         />,
     );
-    return { onChange };
+    return { onChange, container };
 }
 
 describe('ConfigForm', () => {
+    it('按 section 切成两张卡片并保持顺序', () => {
+        const { container } = renderForm();
+        expect(container.querySelectorAll('.card')).toHaveLength(2);
+        expect(
+            screen
+                .getAllByRole('heading', { level: 3 })
+                .map((heading) => heading.textContent),
+        ).toEqual(['基础配置', '示例字段']);
+    });
+
+    it('渲染 section 的 description 作为卡片副标题', () => {
+        renderForm();
+        expect(
+            screen.getByText(
+                '演示各 kind 的呈现; 开新项目后请连同本分组删除 (本行即 section 的 description)',
+            ),
+        ).toBeInTheDocument();
+    });
+
     it('按 kind 渲染各字段控件', () => {
         renderForm();
         expect(screen.getByText('示例开关')).toBeInTheDocument();
@@ -49,13 +70,9 @@ describe('ConfigForm', () => {
         expect(screen.queryByText(/跳转至拓展页面/)).toBeNull();
     });
 
-    it('渲染 section 标题且不触发 onChange', () => {
+    it('卡片标题不触发 onChange', () => {
         const { onChange } = renderForm();
-        expect(
-            screen.getByText(
-                '示例字段（演示各 kind，开新项目后请删除）',
-            ),
-        ).toBeInTheDocument();
+        expect(screen.getByText('基础配置')).toBeInTheDocument();
         expect(onChange).not.toHaveBeenCalled();
     });
 
